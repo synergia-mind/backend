@@ -1,0 +1,107 @@
+openapi: 3.0.4
+info:
+  title: Synergia-mind Backend API
+  version: 1.0.0
+  description: This is the API documentation for the Synergia-mind backend.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+paths:
+  /health/:
+    get:
+      tags:
+        - health
+      summary: Comprehensive Health Check
+      description: Returns detailed health status of the application and its dependencies
+      operationId: health-health_check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+              example:
+                status: healthy
+                timestamp: "2025-10-21T14:30:00Z"
+                version: "1.0.0"
+                uptime: 3600
+                checks:
+                  database:
+                    status: up
+                    responseTime: 15
+                    error: null
+        '503':
+          description: Service is unhealthy or degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+              example:
+                status: unhealthy
+                timestamp: "2025-10-21T14:30:00Z"
+                version: "1.0.0"
+                uptime: 3600
+                checks:
+                  database:
+                    status: down
+                    responseTime: null
+                    error: "Connection timeout"
+
+
+components:
+  schemas:
+    HealthStatus:
+      type: string
+      enum: [healthy, degraded, unhealthy]
+      description: Overall health status of the service
+    
+    ComponentStatus:
+      type: string
+      enum: [up, down]
+      description: Status of an individual component
+    
+    ComponentCheck:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ComponentStatus'
+        responseTime:
+          type: number
+          description: Component response time in milliseconds
+          nullable: true
+          example: 15
+        error:
+          type: string
+          description: Error message if check failed
+          nullable: true
+          example: null
+    
+    HealthCheckResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of the health check
+          example: "2025-10-21T14:30:00Z"
+        version:
+          type: string
+          description: Application version
+          example: "1.0.0"
+        uptime:
+          type: number
+          description: Service uptime in seconds
+          example: 3600
+        checks:
+          type: object
+          description: Health status of individual components
+          properties:
+            database:
+              $ref: '#/components/schemas/ComponentCheck'
