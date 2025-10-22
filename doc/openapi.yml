@@ -208,6 +208,83 @@ paths:
               example:
                 error: "Internal server error"
                 message: "Failed to retrieve model from database"
+    
+    patch:
+      tags:
+        - model
+      summary: Update a model
+      description: Update an existing model's information
+      operationId: model-update_model
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the model
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateModel'
+            example:
+              name: "gpt-4-turbo"
+              pricePerMillionTokens: 15.00
+              isEnabled: false
+      responses:
+        '200':
+          description: Model updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "gpt-4-turbo"
+                provider: "openai"
+                pricePerMillionTokens: 15.00
+                isEnabled: false
+                createdAt: "2025-10-01T10:00:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body or model ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid model data provided"
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Model with the specified ID does not exist"
+        '409':
+          description: Update would create a duplicate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Model with this name and provider already exists"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to update model"
 
 
 components:
@@ -341,6 +418,31 @@ components:
           default: true
           description: Whether the model should be enabled (defaults to true)
           example: true
+    
+    UpdateModel:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the model
+          example: "gpt-4-turbo"
+        provider:
+          type: string
+          maxLength: 100
+          description: Provider of the model
+          example: "openai"
+        pricePerMillionTokens:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per million tokens
+          example: 15.00
+        isEnabled:
+          type: boolean
+          description: Whether the model is currently enabled
+          example: false
+      description: All fields are optional. Only provided fields will be updated.
     
     Error:
       type: object
