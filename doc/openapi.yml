@@ -15,6 +15,7 @@ paths:
       summary: Comprehensive Health Check
       description: Returns detailed health status of the application and its dependencies
       operationId: health-health_check
+      security: []
       responses:
         '200':
           description: Service is healthy
@@ -80,6 +81,15 @@ paths:
                   isEnabled: true
                   createdAt: "2025-10-01T10:00:00Z"
                   updatedAt: "2025-10-01T10:00:00Z"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -131,6 +141,15 @@ paths:
               example:
                 error: "Bad request"
                 message: "Invalid model data provided"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '409':
           description: Model already exists
           content:
@@ -199,6 +218,15 @@ paths:
               example:
                 error: "Bad request"
                 message: "Invalid UUID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -276,6 +304,15 @@ paths:
               example:
                 error: "Conflict"
                 message: "Model with this name and provider already exists"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -331,6 +368,15 @@ paths:
               example:
                 error: "Conflict"
                 message: "Cannot delete model that is currently in use by messages"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -398,6 +444,15 @@ paths:
               example:
                 error: "Bad request"
                 message: "Invalid user ID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -448,6 +503,15 @@ paths:
               example:
                 error: "Bad request"
                 message: "Invalid chat data provided"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -507,6 +571,15 @@ paths:
               example:
                 error: "Bad request"
                 message: "Invalid UUID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -574,6 +647,15 @@ paths:
               example:
                 error: "Not found"
                 message: "Chat with the specified ID does not exist"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -620,6 +702,15 @@ paths:
               example:
                 error: "Not found"
                 message: "Chat with the specified ID does not exist"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
         '500':
           description: Internal server error
           content:
@@ -889,3 +980,23 @@ components:
           type: string
           description: Detailed error message
           example: "Failed to retrieve models from database"
+
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Clerk JWT token authentication. Include the session token in the Authorization header.
+        
+        Format: `Authorization: Bearer <session_token>`
+        
+        The token is verified using Clerk's Python SDK which validates:
+        - Token signature
+        - Token expiration
+        - Issuer (your Clerk instance)
+        
+        To obtain a token, authenticate through Clerk's frontend SDK.
+
+security:
+  - ClerkAuth: []
