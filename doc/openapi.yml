@@ -1,0 +1,1482 @@
+openapi: 3.0.4
+info:
+  title: Synergia-mind Backend API
+  version: 1.0.0
+  description: This is the API documentation for the Synergia-mind backend.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+paths:
+  /health/:
+    get:
+      tags:
+        - health
+      summary: Comprehensive Health Check
+      description: Returns detailed health status of the application and its dependencies
+      operationId: health-health_check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+              example:
+                status: healthy
+                timestamp: "2025-10-21T14:30:00Z"
+                version: "1.0.0"
+                uptime: 3600
+                checks:
+                  database:
+                    status: up
+                    responseTime: 15
+                    error: null
+        '503':
+          description: Service is unhealthy or degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+              example:
+                status: unhealthy
+                timestamp: "2025-10-21T14:30:00Z"
+                version: "1.0.0"
+                uptime: 3600
+                checks:
+                  database:
+                    status: down
+                    responseTime: null
+                    error: "Connection timeout"
+
+  /model/:
+    get:
+      tags:
+        - model
+      summary: Retrieve all models
+      description: Fetch a list of all models available in the system
+      operationId: model-list_models
+      responses:
+        '200':
+          description: Successfully retrieved list of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "gpt-4"
+                  provider: "openai"
+                  pricePerMillionTokens: 30.00
+                  isEnabled: true
+                  createdAt: "2025-10-01T10:00:00Z"
+                  updatedAt: "2025-10-01T10:00:00Z"
+                - id: "550e8400-e29b-41d4-a716-446655440001"
+                  name: "claude-3-opus"
+                  provider: "anthropic"
+                  pricePerMillionTokens: 15.00
+                  isEnabled: true
+                  createdAt: "2025-10-01T10:00:00Z"
+                  updatedAt: "2025-10-01T10:00:00Z"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve models from database"
+    
+    post:
+      tags:
+        - model
+      summary: Create a new model
+      description: Create a new AI model in the system
+      operationId: model-create_model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModel'
+            example:
+              name: "gpt-4-turbo"
+              provider: "openai"
+              pricePerMillionTokens: 10.00
+              isEnabled: true
+      responses:
+        '201':
+          description: Model created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440002"
+                name: "gpt-4-turbo"
+                provider: "openai"
+                pricePerMillionTokens: 10.00
+                isEnabled: true
+                createdAt: "2025-10-21T14:30:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid model data provided"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '409':
+          description: Model already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Model with this name and provider already exists"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to create model"
+
+  /model/{id}/:
+    get:
+      tags:
+        - model
+      summary: Retrieve a single model by ID
+      description: Fetch details of a specific model using its unique identifier
+      operationId: model-get_model
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the model
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Successfully retrieved model details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "gpt-4"
+                provider: "openai"
+                pricePerMillionTokens: 30.00
+                isEnabled: true
+                createdAt: "2025-10-01T10:00:00Z"
+                updatedAt: "2025-10-01T10:00:00Z"
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Model with the specified ID does not exist"
+        '400':
+          description: Invalid model ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve model from database"
+    
+    patch:
+      tags:
+        - model
+      summary: Update a model
+      description: Update an existing model's information
+      operationId: model-update_model
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the model
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateModel'
+            example:
+              name: "gpt-4-turbo"
+              pricePerMillionTokens: 15.00
+              isEnabled: false
+      responses:
+        '200':
+          description: Model updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "gpt-4-turbo"
+                provider: "openai"
+                pricePerMillionTokens: 15.00
+                isEnabled: false
+                createdAt: "2025-10-01T10:00:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body or model ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid model data provided"
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Model with the specified ID does not exist"
+        '409':
+          description: Update would create a duplicate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Model with this name and provider already exists"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to update model"
+    
+    delete:
+      tags:
+        - model
+      summary: Delete a model
+      description: Delete an existing model from the system
+      operationId: model-delete_model
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the model
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '204':
+          description: Model deleted successfully (no content)
+        '400':
+          description: Invalid model ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Model with the specified ID does not exist"
+        '409':
+          description: Cannot delete model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Cannot delete model that is currently in use by messages"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to delete model"
+
+  /chat/:
+    get:
+      tags:
+        - chat
+      summary: Retrieve all chats for a user
+      description: Fetch a list of all chats for the authenticated user. User ID is extracted from the authentication token.
+      operationId: chat-list_chats
+      parameters:
+        - name: include_deleted
+          in: query
+          required: false
+          description: Include soft-deleted chats
+          schema:
+            type: boolean
+            default: false
+          example: false
+      responses:
+        '200':
+          description: Successfully retrieved list of chats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440020"
+                  userId: "550e8400-e29b-41d4-a716-446655440010"
+                  title: "Project Discussion"
+                  summary: "Discussion about the new feature implementation"
+                  isDeleted: false
+                  createdAt: "2025-10-20T10:00:00Z"
+                  updatedAt: "2025-10-20T15:30:00Z"
+                - id: "550e8400-e29b-41d4-a716-446655440021"
+                  userId: "550e8400-e29b-41d4-a716-446655440010"
+                  title: "Code Review"
+                  summary: null
+                  isDeleted: false
+                  createdAt: "2025-10-21T09:00:00Z"
+                  updatedAt: "2025-10-21T09:00:00Z"
+        '400':
+          description: Invalid user ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid user ID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve chats from database"
+    
+    post:
+      tags:
+        - chat
+      summary: Create a new chat
+      description: Create a new chat for the authenticated user. User ID is extracted from the authentication token.
+      operationId: chat-create_chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChat'
+            example:
+              title: "New Chat Session"
+              summary: "Initial conversation about AI models"
+      responses:
+        '201':
+          description: Chat created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440022"
+                userId: "550e8400-e29b-41d4-a716-446655440010"
+                title: "New Chat Session"
+                summary: "Initial conversation about AI models"
+                isDeleted: false
+                createdAt: "2025-10-21T14:30:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid chat data provided"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to create chat"
+
+  /chat/{id}/:
+    get:
+      tags:
+        - chat
+      summary: Retrieve a single chat by ID
+      description: Fetch details of a specific chat using its unique identifier
+      operationId: chat-get_chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the chat
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      responses:
+        '200':
+          description: Successfully retrieved chat details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440020"
+                userId: "550e8400-e29b-41d4-a716-446655440010"
+                title: "Project Discussion"
+                summary: "Discussion about the new feature implementation"
+                isDeleted: false
+                createdAt: "2025-10-20T10:00:00Z"
+                updatedAt: "2025-10-20T15:30:00Z"
+        '404':
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Chat with the specified ID does not exist"
+        '400':
+          description: Invalid chat ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve chat from database"
+    
+    patch:
+      tags:
+        - chat
+      summary: Update a chat
+      description: Update an existing chat's information
+      operationId: chat-update_chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the chat
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChat'
+            example:
+              title: "Updated Project Discussion"
+              summary: "Updated summary of the discussion"
+      responses:
+        '200':
+          description: Chat updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440020"
+                userId: "550e8400-e29b-41d4-a716-446655440010"
+                title: "Updated Project Discussion"
+                summary: "Updated summary of the discussion"
+                isDeleted: false
+                createdAt: "2025-10-20T10:00:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body or chat ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid chat data provided"
+        '404':
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Chat with the specified ID does not exist"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to update chat"
+    
+    delete:
+      tags:
+        - chat
+      summary: Delete a chat
+      description: Soft delete a chat (sets is_deleted flag to true)
+      operationId: chat-delete_chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the chat
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      responses:
+        '204':
+          description: Chat deleted successfully (no content)
+        '400':
+          description: Invalid chat ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '404':
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Chat with the specified ID does not exist"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to delete chat"
+
+  /message/:
+    get:
+      tags:
+        - message
+      summary: Retrieve all messages for a chat
+      description: Fetch a list of all messages in a specific chat
+      operationId: message-list_messages
+      parameters:
+        - name: chat_id
+          in: query
+          required: true
+          description: Chat ID to filter messages
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440020"
+        - name: include_deleted
+          in: query
+          required: false
+          description: Include soft-deleted messages
+          schema:
+            type: boolean
+            default: false
+          example: false
+      responses:
+        '200':
+          description: Successfully retrieved list of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440030"
+                  chatId: "550e8400-e29b-41d4-a716-446655440020"
+                  modelId: "550e8400-e29b-41d4-a716-446655440000"
+                  type: "user"
+                  content: "How can I improve my code?"
+                  tokens: 150
+                  feedback: null
+                  isDeleted: false
+                  createdAt: "2025-10-20T10:05:00Z"
+                  updatedAt: "2025-10-20T10:05:00Z"
+                - id: "550e8400-e29b-41d4-a716-446655440031"
+                  chatId: "550e8400-e29b-41d4-a716-446655440020"
+                  modelId: "550e8400-e29b-41d4-a716-446655440000"
+                  type: "assistant"
+                  content: "Here are some suggestions for improving your code..."
+                  tokens: 320
+                  feedback: "positive"
+                  isDeleted: false
+                  createdAt: "2025-10-20T10:05:15Z"
+                  updatedAt: "2025-10-20T10:06:00Z"
+        '400':
+          description: Invalid chat ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid chat ID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve messages from database"
+    
+    post:
+      tags:
+        - message
+      summary: Create a new message
+      description: Create a new message in a chat
+      operationId: message-create_message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessage'
+            example:
+              chatId: "550e8400-e29b-41d4-a716-446655440020"
+              modelId: "550e8400-e29b-41d4-a716-446655440000"
+              type: "user"
+              content: "What are the best practices for Python?"
+              tokens: 75
+      responses:
+        '201':
+          description: Message created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440032"
+                chatId: "550e8400-e29b-41d4-a716-446655440020"
+                modelId: "550e8400-e29b-41d4-a716-446655440000"
+                type: "user"
+                content: "What are the best practices for Python?"
+                tokens: 75
+                feedback: null
+                isDeleted: false
+                createdAt: "2025-10-21T14:30:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid message data provided"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '404':
+          description: Chat or model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Chat or model with the specified ID does not exist"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to create message"
+
+  /message/{id}/:
+    get:
+      tags:
+        - message
+      summary: Retrieve a single message by ID
+      description: Fetch details of a specific message using its unique identifier
+      operationId: message-get_message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the message
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440030"
+      responses:
+        '200':
+          description: Successfully retrieved message details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440030"
+                chatId: "550e8400-e29b-41d4-a716-446655440020"
+                modelId: "550e8400-e29b-41d4-a716-446655440000"
+                type: "user"
+                content: "How can I improve my code?"
+                tokens: 150
+                feedback: null
+                isDeleted: false
+                createdAt: "2025-10-20T10:05:00Z"
+                updatedAt: "2025-10-20T10:05:00Z"
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Message with the specified ID does not exist"
+        '400':
+          description: Invalid message ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve message from database"
+    
+    patch:
+      tags:
+        - message
+      summary: Update a message
+      description: Update an existing message's information (content, model, type, feedback, etc.)
+      operationId: message-update_message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the message
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440030"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMessage'
+            example:
+              modelId: "550e8400-e29b-41d4-a716-446655440001"
+              content: "How can I write better Python code?"
+              feedback: "positive"
+      responses:
+        '200':
+          description: Message updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440030"
+                chatId: "550e8400-e29b-41d4-a716-446655440020"
+                modelId: "550e8400-e29b-41d4-a716-446655440001"
+                type: "user"
+                content: "How can I write better Python code?"
+                tokens: 150
+                feedback: "positive"
+                isDeleted: false
+                createdAt: "2025-10-20T10:05:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body or message ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid message data provided"
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Message with the specified ID does not exist"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to update message"
+    
+    delete:
+      tags:
+        - message
+      summary: Delete a message
+      description: Soft delete a message (sets is_deleted flag to true)
+      operationId: message-delete_message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the message
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440030"
+      responses:
+        '204':
+          description: Message deleted successfully (no content)
+        '400':
+          description: Invalid message ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Message with the specified ID does not exist"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to delete message"
+
+
+components:
+  schemas:
+    HealthStatus:
+      type: string
+      enum: [healthy, degraded, unhealthy]
+      description: Overall health status of the service
+    
+    ComponentStatus:
+      type: string
+      enum: [up, down]
+      description: Status of an individual component
+    
+    ComponentCheck:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ComponentStatus'
+        responseTime:
+          type: number
+          description: Component response time in milliseconds
+          nullable: true
+          example: 15
+        error:
+          type: string
+          description: Error message if check failed
+          nullable: true
+          example: null
+    
+    HealthCheckResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of the health check
+          example: "2025-10-21T14:30:00Z"
+        version:
+          type: string
+          description: Application version
+          example: "1.0.0"
+        uptime:
+          type: number
+          description: Service uptime in seconds
+          example: 3600
+        checks:
+          type: object
+          description: Health status of individual components
+          properties:
+            database:
+              $ref: '#/components/schemas/ComponentCheck'
+    
+    Model:
+      type: object
+      required:
+        - id
+        - name
+        - provider
+        - pricePerMillionTokens
+        - isEnabled
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the model
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the model
+          example: "gpt-4"
+        provider:
+          type: string
+          maxLength: 100
+          description: Provider of the model
+          example: "openai"
+        pricePerMillionTokens:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per million tokens
+          example: 30.00
+        isEnabled:
+          type: boolean
+          description: Whether the model is currently enabled
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the model was created
+          example: "2025-10-01T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the model was last updated
+          example: "2025-10-01T10:00:00Z"
+    
+    CreateModel:
+      type: object
+      required:
+        - name
+        - provider
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the model
+          example: "gpt-4-turbo"
+        provider:
+          type: string
+          maxLength: 100
+          description: Provider of the model
+          example: "openai"
+        pricePerMillionTokens:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Price per million tokens (defaults to 0 if not provided)
+          example: 10.00
+        isEnabled:
+          type: boolean
+          default: true
+          description: Whether the model should be enabled (defaults to true)
+          example: true
+    
+    UpdateModel:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the model
+          example: "gpt-4-turbo"
+        provider:
+          type: string
+          maxLength: 100
+          description: Provider of the model
+          example: "openai"
+        pricePerMillionTokens:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per million tokens
+          example: 15.00
+        isEnabled:
+          type: boolean
+          description: Whether the model is currently enabled
+          example: false
+      description: All fields are optional. Only provided fields will be updated.
+    
+    Chat:
+      type: object
+      required:
+        - id
+        - userId
+        - isDeleted
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the chat
+          example: "550e8400-e29b-41d4-a716-446655440020"
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who owns the chat
+          example: "550e8400-e29b-41d4-a716-446655440010"
+        title:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Title of the chat
+          example: "Project Discussion"
+        summary:
+          type: string
+          nullable: true
+          description: Summary of the chat conversation
+          example: "Discussion about the new feature implementation"
+        isDeleted:
+          type: boolean
+          description: Whether the chat is soft deleted
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the chat was created
+          example: "2025-10-20T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the chat was last updated
+          example: "2025-10-20T15:30:00Z"
+    
+    CreateChat:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Title of the chat (optional)
+          example: "New Chat Session"
+        summary:
+          type: string
+          nullable: true
+          description: Summary of the chat (optional)
+          example: "Initial conversation about AI models"
+      description: User ID is automatically extracted from the authentication token
+    
+    UpdateChat:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Title of the chat
+          example: "Updated Project Discussion"
+        summary:
+          type: string
+          nullable: true
+          description: Summary of the chat conversation
+          example: "Updated summary of the discussion"
+        isDeleted:
+          type: boolean
+          description: Whether the chat is soft deleted
+          example: false
+      description: All fields are optional. Only provided fields will be updated.
+    
+    Message:
+      type: object
+      required:
+        - id
+        - chatId
+        - modelId
+        - type
+        - content
+        - isDeleted
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the message
+          example: "550e8400-e29b-41d4-a716-446655440030"
+        chatId:
+          type: string
+          format: uuid
+          description: ID of the chat this message belongs to
+          example: "550e8400-e29b-41d4-a716-446655440020"
+        modelId:
+          type: string
+          format: uuid
+          description: ID of the AI model used for this message
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        type:
+          type: string
+          maxLength: 50
+          description: Type of message (user, assistant, system, etc.)
+          example: "user"
+          enum: [user, assistant, system]
+        content:
+          type: string
+          description: Content of the message
+          example: "How can I improve my code?"
+        tokens:
+          type: integer
+          nullable: true
+          description: Number of tokens in the message
+          example: 150
+        feedback:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: User feedback on the message (positive, negative, or null)
+          example: null
+          enum: [positive, negative, null]
+        isDeleted:
+          type: boolean
+          description: Whether the message is soft deleted
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the message was created
+          example: "2025-10-20T10:05:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the message was last updated
+          example: "2025-10-20T10:05:00Z"
+    
+    CreateMessage:
+      type: object
+      required:
+        - chatId
+        - modelId
+        - type
+        - content
+      properties:
+        chatId:
+          type: string
+          format: uuid
+          description: ID of the chat this message belongs to
+          example: "550e8400-e29b-41d4-a716-446655440020"
+        modelId:
+          type: string
+          format: uuid
+          description: ID of the AI model used for this message
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        type:
+          type: string
+          maxLength: 50
+          description: Type of message (user, assistant, system, etc.)
+          example: "user"
+          enum: [user, assistant, system]
+        content:
+          type: string
+          description: Content of the message
+          example: "What are the best practices for Python?"
+        tokens:
+          type: integer
+          nullable: true
+          description: Number of tokens in the message (optional)
+          example: 75
+    
+    UpdateMessage:
+      type: object
+      properties:
+        modelId:
+          type: string
+          format: uuid
+          description: ID of the AI model used for this message
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        type:
+          type: string
+          maxLength: 50
+          description: Type of message (user, assistant, system, etc.)
+          example: "assistant"
+          enum: [user, assistant, system]
+        content:
+          type: string
+          description: Content of the message
+          example: "Updated message content"
+        tokens:
+          type: integer
+          nullable: true
+          description: Number of tokens in the message
+          example: 150
+        feedback:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: User feedback on the message (positive, negative, or null)
+          example: "positive"
+          enum: [positive, negative, null]
+        isDeleted:
+          type: boolean
+          description: Whether the message is soft deleted
+          example: false
+      description: All fields are optional. Only provided fields will be updated.
+    
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type or category
+          example: "Internal server error"
+        message:
+          type: string
+          description: Detailed error message
+          example: "Failed to retrieve models from database"
+
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Clerk JWT token authentication. Include the session token in the Authorization header.
+        
+        Format: `Authorization: Bearer <session_token>`
+        
+        The token is verified using Clerk's Python SDK which validates:
+        - Token signature
+        - Token expiration
+        - Issuer (your Clerk instance)
+        
+        To obtain a token, authenticate through Clerk's frontend SDK.
+
+security:
+  - ClerkAuth: []
