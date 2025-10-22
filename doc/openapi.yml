@@ -341,6 +341,295 @@ paths:
                 error: "Internal server error"
                 message: "Failed to delete model"
 
+  /chat/:
+    get:
+      tags:
+        - chat
+      summary: Retrieve all chats for a user
+      description: Fetch a list of all chats for the authenticated user
+      operationId: chat-list_chats
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: User ID to filter chats
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440010"
+        - name: include_deleted
+          in: query
+          required: false
+          description: Include soft-deleted chats
+          schema:
+            type: boolean
+            default: false
+          example: false
+      responses:
+        '200':
+          description: Successfully retrieved list of chats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440020"
+                  userId: "550e8400-e29b-41d4-a716-446655440010"
+                  title: "Project Discussion"
+                  summary: "Discussion about the new feature implementation"
+                  isDeleted: false
+                  createdAt: "2025-10-20T10:00:00Z"
+                  updatedAt: "2025-10-20T15:30:00Z"
+                - id: "550e8400-e29b-41d4-a716-446655440021"
+                  userId: "550e8400-e29b-41d4-a716-446655440010"
+                  title: "Code Review"
+                  summary: null
+                  isDeleted: false
+                  createdAt: "2025-10-21T09:00:00Z"
+                  updatedAt: "2025-10-21T09:00:00Z"
+        '400':
+          description: Invalid user ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid user ID format"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve chats from database"
+    
+    post:
+      tags:
+        - chat
+      summary: Create a new chat
+      description: Create a new chat for a user
+      operationId: chat-create_chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChat'
+            example:
+              userId: "550e8400-e29b-41d4-a716-446655440010"
+              title: "New Chat Session"
+              summary: "Initial conversation about AI models"
+      responses:
+        '201':
+          description: Chat created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440022"
+                userId: "550e8400-e29b-41d4-a716-446655440010"
+                title: "New Chat Session"
+                summary: "Initial conversation about AI models"
+                isDeleted: false
+                createdAt: "2025-10-21T14:30:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid chat data provided"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to create chat"
+
+  /chat/{id}/:
+    get:
+      tags:
+        - chat
+      summary: Retrieve a single chat by ID
+      description: Fetch details of a specific chat using its unique identifier
+      operationId: chat-get_chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the chat
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      responses:
+        '200':
+          description: Successfully retrieved chat details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440020"
+                userId: "550e8400-e29b-41d4-a716-446655440010"
+                title: "Project Discussion"
+                summary: "Discussion about the new feature implementation"
+                isDeleted: false
+                createdAt: "2025-10-20T10:00:00Z"
+                updatedAt: "2025-10-20T15:30:00Z"
+        '404':
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Chat with the specified ID does not exist"
+        '400':
+          description: Invalid chat ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve chat from database"
+    
+    patch:
+      tags:
+        - chat
+      summary: Update a chat
+      description: Update an existing chat's information
+      operationId: chat-update_chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the chat
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChat'
+            example:
+              title: "Updated Project Discussion"
+              summary: "Updated summary of the discussion"
+      responses:
+        '200':
+          description: Chat updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440020"
+                userId: "550e8400-e29b-41d4-a716-446655440010"
+                title: "Updated Project Discussion"
+                summary: "Updated summary of the discussion"
+                isDeleted: false
+                createdAt: "2025-10-20T10:00:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body or chat ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid chat data provided"
+        '404':
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Chat with the specified ID does not exist"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to update chat"
+    
+    delete:
+      tags:
+        - chat
+      summary: Delete a chat
+      description: Soft delete a chat (sets is_deleted flag to true)
+      operationId: chat-delete_chat
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the chat
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440020"
+      responses:
+        '204':
+          description: Chat deleted successfully (no content)
+        '400':
+          description: Invalid chat ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '404':
+          description: Chat not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Chat with the specified ID does not exist"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to delete chat"
+
 
 components:
   schemas:
@@ -496,6 +785,93 @@ components:
         isEnabled:
           type: boolean
           description: Whether the model is currently enabled
+          example: false
+      description: All fields are optional. Only provided fields will be updated.
+    
+    Chat:
+      type: object
+      required:
+        - id
+        - userId
+        - isDeleted
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the chat
+          example: "550e8400-e29b-41d4-a716-446655440020"
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who owns the chat
+          example: "550e8400-e29b-41d4-a716-446655440010"
+        title:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Title of the chat
+          example: "Project Discussion"
+        summary:
+          type: string
+          nullable: true
+          description: Summary of the chat conversation
+          example: "Discussion about the new feature implementation"
+        isDeleted:
+          type: boolean
+          description: Whether the chat is soft deleted
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the chat was created
+          example: "2025-10-20T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the chat was last updated
+          example: "2025-10-20T15:30:00Z"
+    
+    CreateChat:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user creating the chat
+          example: "550e8400-e29b-41d4-a716-446655440010"
+        title:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Title of the chat (optional)
+          example: "New Chat Session"
+        summary:
+          type: string
+          nullable: true
+          description: Summary of the chat (optional)
+          example: "Initial conversation about AI models"
+    
+    UpdateChat:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Title of the chat
+          example: "Updated Project Discussion"
+        summary:
+          type: string
+          nullable: true
+          description: Summary of the chat conversation
+          example: "Updated summary of the discussion"
+        isDeleted:
+          type: boolean
+          description: Whether the chat is soft deleted
           example: false
       description: All fields are optional. Only provided fields will be updated.
     
