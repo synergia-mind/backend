@@ -49,6 +49,166 @@ paths:
                     responseTime: null
                     error: "Connection timeout"
 
+  /model/:
+    get:
+      tags:
+        - model
+      summary: Retrieve all models
+      description: Fetch a list of all models available in the system
+      operationId: model-list_models
+      responses:
+        '200':
+          description: Successfully retrieved list of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "gpt-4"
+                  provider: "openai"
+                  pricePerMillionTokens: 30.00
+                  isEnabled: true
+                  createdAt: "2025-10-01T10:00:00Z"
+                  updatedAt: "2025-10-01T10:00:00Z"
+                - id: "550e8400-e29b-41d4-a716-446655440001"
+                  name: "claude-3-opus"
+                  provider: "anthropic"
+                  pricePerMillionTokens: 15.00
+                  isEnabled: true
+                  createdAt: "2025-10-01T10:00:00Z"
+                  updatedAt: "2025-10-01T10:00:00Z"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve models from database"
+    
+    post:
+      tags:
+        - model
+      summary: Create a new model
+      description: Create a new AI model in the system
+      operationId: model-create_model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModel'
+            example:
+              name: "gpt-4-turbo"
+              provider: "openai"
+              pricePerMillionTokens: 10.00
+              isEnabled: true
+      responses:
+        '201':
+          description: Model created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440002"
+                name: "gpt-4-turbo"
+                provider: "openai"
+                pricePerMillionTokens: 10.00
+                isEnabled: true
+                createdAt: "2025-10-21T14:30:00Z"
+                updatedAt: "2025-10-21T14:30:00Z"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid model data provided"
+        '409':
+          description: Model already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Model with this name and provider already exists"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to create model"
+
+  /model/{id}/:
+    get:
+      tags:
+        - model
+      summary: Retrieve a single model by ID
+      description: Fetch details of a specific model using its unique identifier
+      operationId: model-get_model
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the model
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Successfully retrieved model details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "gpt-4"
+                provider: "openai"
+                pricePerMillionTokens: 30.00
+                isEnabled: true
+                createdAt: "2025-10-01T10:00:00Z"
+                updatedAt: "2025-10-01T10:00:00Z"
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not found"
+                message: "Model with the specified ID does not exist"
+        '400':
+          description: Invalid model ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad request"
+                message: "Invalid UUID format"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve model from database"
+
 
 components:
   schemas:
@@ -105,3 +265,94 @@ components:
           properties:
             database:
               $ref: '#/components/schemas/ComponentCheck'
+    
+    Model:
+      type: object
+      required:
+        - id
+        - name
+        - provider
+        - pricePerMillionTokens
+        - isEnabled
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the model
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the model
+          example: "gpt-4"
+        provider:
+          type: string
+          maxLength: 100
+          description: Provider of the model
+          example: "openai"
+        pricePerMillionTokens:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per million tokens
+          example: 30.00
+        isEnabled:
+          type: boolean
+          description: Whether the model is currently enabled
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the model was created
+          example: "2025-10-01T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the model was last updated
+          example: "2025-10-01T10:00:00Z"
+    
+    CreateModel:
+      type: object
+      required:
+        - name
+        - provider
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the model
+          example: "gpt-4-turbo"
+        provider:
+          type: string
+          maxLength: 100
+          description: Provider of the model
+          example: "openai"
+        pricePerMillionTokens:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Price per million tokens (defaults to 0 if not provided)
+          example: 10.00
+        isEnabled:
+          type: boolean
+          default: true
+          description: Whether the model should be enabled (defaults to true)
+          example: true
+    
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type or category
+          example: "Internal server error"
+        message:
+          type: string
+          description: Detailed error message
+          example: "Failed to retrieve models from database"
