@@ -392,17 +392,9 @@ paths:
       tags:
         - chat
       summary: Retrieve all chats for a user
-      description: Fetch a list of all chats for the authenticated user
+      description: Fetch a list of all chats for the authenticated user. User ID is extracted from the authentication token.
       operationId: chat-list_chats
       parameters:
-        - name: user_id
-          in: query
-          required: true
-          description: User ID to filter chats
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440010"
         - name: include_deleted
           in: query
           required: false
@@ -467,7 +459,7 @@ paths:
       tags:
         - chat
       summary: Create a new chat
-      description: Create a new chat for a user
+      description: Create a new chat for the authenticated user. User ID is extracted from the authentication token.
       operationId: chat-create_chat
       requestBody:
         required: true
@@ -476,7 +468,6 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateChat'
             example:
-              userId: "550e8400-e29b-41d4-a716-446655440010"
               title: "New Chat Session"
               summary: "Initial conversation about AI models"
       responses:
@@ -1287,14 +1278,7 @@ components:
     
     CreateChat:
       type: object
-      required:
-        - userId
       properties:
-        userId:
-          type: string
-          format: uuid
-          description: ID of the user creating the chat
-          example: "550e8400-e29b-41d4-a716-446655440010"
         title:
           type: string
           maxLength: 500
@@ -1306,6 +1290,7 @@ components:
           nullable: true
           description: Summary of the chat (optional)
           example: "Initial conversation about AI models"
+      description: User ID is automatically extracted from the authentication token
     
     UpdateChat:
       type: object
