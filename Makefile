@@ -19,3 +19,26 @@ test: ## Run tests
 	uv run coverage run --source=app --omit='app/tests/*' -m pytest
 	uv run coverage report --show-missing
 
+format: ## Format code using ruff
+	ruff check app scripts --fix
+	ruff format app scripts
+
+# Database Migration Commands
+migrate-create: ## Create a new migration (usage: make migrate-create MSG="migration message")
+	uv run alembic revision --autogenerate -m "$(MSG)"
+
+migrate-upgrade: ## Apply all pending migrations
+	uv run alembic upgrade head
+
+migrate-downgrade: ## Rollback one migration
+	uv run alembic downgrade -1
+
+migrate-current: ## Show current migration
+	uv run alembic current
+
+migrate-history: ## Show migration history
+	uv run alembic history
+
+migrate-reset: ## Reset to base migration (WARNING: destructive)
+	uv run alembic downgrade base
+
