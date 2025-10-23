@@ -49,6 +49,12 @@ class Settings(BaseSettings):
         list[AnyUrl] | str, BeforeValidator(parse_cors)
     ] = []
 
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "changeme"
+    POSTGRES_DB: str = "sampledb"
+
     @property
     def IS_PRODUCTION(self) -> bool:
         """
@@ -58,6 +64,18 @@ class Settings(BaseSettings):
             bool: True if in production, False otherwise.
         """
         return self.ENVIRONMENT.lower() == "production"
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+        return PostgresDsn(str(MultiHostUrl.build(
+            scheme="postgresql+psycopg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host=self.POSTGRES_SERVER,
+            port=self.POSTGRES_PORT,
+            path=self.POSTGRES_DB,
+        )))
     
     @computed_field  # type: ignore[prop-decorator]
     @property
