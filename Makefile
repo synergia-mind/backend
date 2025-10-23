@@ -15,3 +15,7 @@ install-dev: ## Install development dependencies
 dev: ## Run the development server
 	uv run fastapi dev app/main.py --no-reload --port 8000 --host 0.0.0.0
 
+test: ## Run tests
+	uv run coverage run --source=app --omit='app/tests/*' -m pytest
+	uv run coverage report --show-missing
+
