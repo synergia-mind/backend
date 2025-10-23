@@ -69,3 +69,34 @@ class ModelPublic(ModelBase):
     updated_at: datetime
 
 # ==============================================
+# Chat table models
+class ChatBase(SQLModel):
+    title: Optional[str] = Field(default=None, max_length=500)
+    summary: Optional[str] = None
+    is_deleted: bool = Field(default=False)
+
+
+class Chat(ChatBase, table=True):
+    __tablename__ = "chats"
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ChatCreate(SQLModel):
+    title: Optional[str] = Field(default=None, max_length=500)
+    summary: Optional[str] = None
+
+
+class ChatUpdate(ChatBase):
+    pass
+
+
+class ChatPublic(ChatBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+# ==============================================
