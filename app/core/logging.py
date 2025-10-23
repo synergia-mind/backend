@@ -1,7 +1,7 @@
 import logging
 import logging.handlers
 
-from core.config import Settings
+from app.core.config import Settings
 
 settings = Settings()
 

@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
 
-from api.main import router as api_router
-from core import settings
-from core.logging import get_logger
+from app.api.main import router as api_router
+from app.core import settings
+from app.core.logging import get_logger
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware

@@ -1,14 +1,15 @@
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Field
 from pydantic import BaseModel
 from typing import Optional, Literal
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
+from decimal import Decimal
+import uuid
 
 
 # Generic message response
-class Message(SQLModel):
+class MessageResponse(SQLModel):
    message: str
-
 
 # Health check models
 class HealthStatus(str, Enum):
@@ -33,3 +34,128 @@ class HealthCheckResponse(BaseModel):
     timestamp: datetime
     version: Optional[str] = None
     uptime: Optional[float] = None
+
+# ==============================================
+# Model table models
+class ModelBase(SQLModel):
+    name: str = Field(max_length=255)
+    provider: str = Field(max_length=100)
+    price_per_million_tokens: Decimal = Field(max_digits=10, decimal_places=6)
+    is_enabled: bool = Field(default=True)
+
+
+class Model(ModelBase, table=True):
+    __tablename__ = "models"
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ModelCreate(ModelBase):
+    pass
+
+
+class ModelUpdate(SQLModel):
+    name: Optional[str] = Field(default=None, max_length=255)
+    provider: Optional[str] = Field(default=None, max_length=100)
+    price_per_million_tokens: Optional[Decimal] = Field(default=None, max_digits=10, decimal_places=6)
+    is_enabled: Optional[bool] = None
+
+
+class ModelPublic(ModelBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+# ==============================================
+# Chat table models
+class ChatBase(SQLModel):
+    title: Optional[str] = Field(default=None, max_length=500)
+    summary: Optional[str] = None
+    is_deleted: bool = Field(default=False)
+
+
+class Chat(ChatBase, table=True):
+    __tablename__ = "chats"
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ChatCreate(SQLModel):
+    title: Optional[str] = Field(default=None, max_length=500)
+    summary: Optional[str] = None
+
+
+class ChatUpdate(ChatBase):
+    pass
+
+
+class ChatPublic(ChatBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class ChatPublicWithMessages(ChatPublic):
+    messages: list["MessagePublic"] = []
+
+# ==============================================
+# Message table models
+class MessageType(str, Enum):
+    user = "user"
+    assistant = "ai"
+    system = "system"
+
+
+class MessageFeedback(str, Enum):
+    positive = "positive"
+    negative = "negative"
+
+
+class MessageBase(SQLModel):
+    chat_id: uuid.UUID
+    model_id: uuid.UUID
+    type: MessageType
+    content: str
+    tokens: Optional[int] = None
+    feedback: Optional[str] = Field(default=None, max_length=20)
+    is_deleted: bool = Field(default=False)
+
+
+class Message(MessageBase, table=True):
+    __tablename__ = "messages"
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class MessageCreate(SQLModel):
+    chat_id: uuid.UUID
+    model_id: uuid.UUID
+    type: str = Field(max_length=50)
+    content: str
+    tokens: Optional[int] = None
+
+
+class MessageUpdate(SQLModel):
+    model_id: Optional[uuid.UUID] = None
+    type: Optional[str] = Field(default=None, max_length=50)
+    content: Optional[str] = None
+    tokens: Optional[int] = None
+    feedback: Optional[str] = Field(default=None, max_length=20)
+    is_deleted: Optional[bool] = None
+
+
+class MessagePublic(MessageBase):
+    id: uuid.UUID
+    model: ModelPublic
+    created_at: datetime
+    updated_at: datetime
+
+# ==============================================

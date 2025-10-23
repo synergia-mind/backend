@@ -1,5 +1,5 @@
-from core.config import Settings
-from core.logging import setup_logging
+from app.core.config import Settings
+from app.core.logging import setup_logging
 from functools import lru_cache
 
 @lru_cache(maxsize=1)
