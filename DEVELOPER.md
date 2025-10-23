@@ -152,7 +152,7 @@ session.add(chat)
 session.commit()
 ```
 
-### 5. Create Service Layer (Optional)
+### 5. Migrations
 
 Run migrations to create the database schema:
 
