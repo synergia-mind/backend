@@ -40,7 +40,7 @@ class HealthCheckResponse(BaseModel):
 class ModelBase(SQLModel):
     name: str = Field(max_length=255)
     provider: str = Field(max_length=100)
-    price_per_million_tokens: Decimal = Field(default=Decimal("0"), max_digits=10, decimal_places=6)
+    price_per_million_tokens: Decimal = Field(max_digits=10, decimal_places=6)
     is_enabled: bool = Field(default=True)
 
 
