@@ -108,7 +108,7 @@ class ChatPublicWithMessages(ChatPublic):
 # Message table models
 class MessageType(str, Enum):
     user = "user"
-    assistant = "assistant"
+    assistant = "ai"
     system = "system"
 
 
@@ -120,7 +120,7 @@ class MessageFeedback(str, Enum):
 class MessageBase(SQLModel):
     chat_id: uuid.UUID
     model_id: uuid.UUID
-    type: str = Field(max_length=50)
+    type: MessageType
     content: str
     tokens: Optional[int] = None
     feedback: Optional[str] = Field(default=None, max_length=20)
