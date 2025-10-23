@@ -1,6 +1,7 @@
 import secrets
 from pathlib import Path
 from typing import Annotated, Any, Literal
+from datetime import datetime, timezone
 
 from pydantic import (AnyUrl, BeforeValidator, EmailStr, PostgresDsn,
                       computed_field)
@@ -33,6 +34,9 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
 
     ENVIRONMENT: Literal["local", "production"] = "local"  # Default environment
+    
+    # Application start time for uptime tracking
+    APP_START_TIME: datetime = datetime.now(timezone.utc)
 
     API_V1_STR: str = "/api/v1"
     FRONTEND_HOST: str = "http://localhost:5173"
@@ -61,3 +65,12 @@ class Settings(BaseSettings):
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
             self.FRONTEND_HOST
         ]
+    
+    def get_uptime_seconds(self) -> float:
+        """
+        Calculate application uptime in seconds.
+        
+        Returns:
+            float: Uptime in seconds since application start.
+        """
+        return (datetime.now(timezone.utc) - self.APP_START_TIME).total_seconds()
