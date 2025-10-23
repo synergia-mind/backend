@@ -278,41 +278,51 @@ The following loggers are set to WARNING level to reduce noise:
 
 ## 🧪 Testing
 
-### Test Structure (Future)
+### Test Structure
 
 ```text
-tests/
+app/tests/
 ├── __init__.py
 ├── conftest.py           # Pytest fixtures
-├── test_health.py        # Health check tests
-└── test_users.py         # User endpoint tests
+└── routes/
+    └── test_health.py    # Health check tests
 ```
 
 ### Writing Tests
 
 ```python
-# tests/test_health.py
+# app/tests/conftest.py
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 
-client = TestClient(app)
+@pytest.fixture(name="client")
+def client_fixture():
+    """Create a test client."""
+    client = TestClient(app)
+    yield client
 
-def test_health_check():
-    response = client.get("/api/v1/health")
+# app/tests/routes/test_health.py
+from fastapi.testclient import TestClient
+from app.core import settings
+from app.models import HealthStatus
+
+def test_health_check(client: TestClient):
+    """Test the health check endpoint to ensure it returns a healthy status."""
+    response = client.get(f"{settings.API_V1_STR}/health/")
     assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
+    assert response.json().get("status", "") == HealthStatus.healthy
 ```
 
 ### Running Tests
 
 ```bash
-# Add to Makefile
-test:
-    uv run pytest tests/ -v
+# Run tests with coverage
+make test
 
-# Run with coverage
-test-cov:
-    uv run pytest tests/ --cov=app --cov-report=html
+# This executes:
+# uv run coverage run --source=app -m pytest
+# uv run coverage report --show-missing
 ```
 
 ## ✨ Best Practices
