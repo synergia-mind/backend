@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 from datetime import datetime, timezone
 from models import HealthCheckResponse, HealthStatus
-from core.config import Settings
+from core import settings
 
 router = APIRouter()
-settings = Settings()
+
 
 
 @router.get("/", status_code=200, response_model=HealthCheckResponse)
