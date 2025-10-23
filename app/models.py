@@ -8,7 +8,7 @@ import uuid
 
 
 # Generic message response
-class Message(SQLModel):
+class MessageResponse(SQLModel):
    message: str
 
 # Health check models
@@ -96,6 +96,65 @@ class ChatUpdate(ChatBase):
 
 class ChatPublic(ChatBase):
     id: uuid.UUID
+    user_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class ChatPublicWithMessages(ChatPublic):
+    messages: list["MessagePublic"] = []
+
+# ==============================================
+# Message table models
+class MessageType(str, Enum):
+    user = "user"
+    assistant = "assistant"
+    system = "system"
+
+
+class MessageFeedback(str, Enum):
+    positive = "positive"
+    negative = "negative"
+
+
+class MessageBase(SQLModel):
+    chat_id: uuid.UUID
+    model_id: uuid.UUID
+    type: str = Field(max_length=50)
+    content: str
+    tokens: Optional[int] = None
+    feedback: Optional[str] = Field(default=None, max_length=20)
+    is_deleted: bool = Field(default=False)
+
+
+class Message(MessageBase, table=True):
+    __tablename__ = "messages"
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class MessageCreate(SQLModel):
+    chat_id: uuid.UUID
+    model_id: uuid.UUID
+    type: str = Field(max_length=50)
+    content: str
+    tokens: Optional[int] = None
+
+
+class MessageUpdate(SQLModel):
+    model_id: Optional[uuid.UUID] = None
+    type: Optional[str] = Field(default=None, max_length=50)
+    content: Optional[str] = None
+    tokens: Optional[int] = None
+    feedback: Optional[str] = Field(default=None, max_length=20)
+    is_deleted: Optional[bool] = None
+
+
+class MessagePublic(MessageBase):
+    id: uuid.UUID
+    model: ModelPublic
     created_at: datetime
     updated_at: datetime
 
