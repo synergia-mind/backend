@@ -4,7 +4,7 @@ from typing import Annotated, Any, Literal
 from datetime import datetime, timezone
 
 from pydantic import (AnyUrl, BeforeValidator, EmailStr, PostgresDsn,
-                      computed_field)
+                      computed_field, Field)
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "production"] = "local"  # Default environment
     
     # Application start time for uptime tracking
-    APP_START_TIME: datetime = datetime.now(timezone.utc)
+    APP_START_TIME: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     API_V1_STR: str = "/api/v1"
     FRONTEND_HOST: str = "http://localhost:5173"
