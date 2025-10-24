@@ -60,8 +60,20 @@ class MessageService:
             return None
         
         message_obj, model_obj = result
-        message_public = MessagePublic.model_validate(message_obj)
-        message_public.model = ModelPublic.model_validate(model_obj)
+        # Construct MessagePublic with all fields including the model
+        message_public = MessagePublic.model_construct(
+            id=message_obj.id,
+            chat_id=message_obj.chat_id,
+            model_id=message_obj.model_id,
+            type=message_obj.type,
+            content=message_obj.content,
+            tokens=message_obj.tokens,
+            feedback=message_obj.feedback,
+            is_deleted=message_obj.is_deleted,
+            created_at=message_obj.created_at,
+            updated_at=message_obj.updated_at,
+            model=ModelPublic.model_validate(model_obj)
+        )
         return message_public
     
     def create_message_with_auto_chat(
@@ -123,8 +135,19 @@ class MessageService:
             raise ValueError("Failed to retrieve created message")
         
         message_obj, model_obj = result
-        message_public = MessagePublic.model_validate(message_obj)
-        message_public.model = ModelPublic.model_validate(model_obj)
+        message_public = MessagePublic.model_construct(
+            id=message_obj.id,
+            chat_id=message_obj.chat_id,
+            model_id=message_obj.model_id,
+            type=message_obj.type,
+            content=message_obj.content,
+            tokens=message_obj.tokens,
+            feedback=message_obj.feedback,
+            is_deleted=message_obj.is_deleted,
+            created_at=message_obj.created_at,
+            updated_at=message_obj.updated_at,
+            model=ModelPublic.model_validate(model_obj)
+        )
         
         return message_public, chat.id
     
@@ -143,8 +166,19 @@ class MessageService:
             return None
         
         message, model = result
-        message_public = MessagePublic.model_validate(message)
-        message_public.model = ModelPublic.model_validate(model)
+        message_public = MessagePublic.model_construct(
+            id=message.id,
+            chat_id=message.chat_id,
+            model_id=message.model_id,
+            type=message.type,
+            content=message.content,
+            tokens=message.tokens,
+            feedback=message.feedback,
+            is_deleted=message.is_deleted,
+            created_at=message.created_at,
+            updated_at=message.updated_at,
+            model=ModelPublic.model_validate(model)
+        )
         return message_public
     
     def get_chat_messages(
@@ -175,8 +209,19 @@ class MessageService:
         
         message_publics = []
         for message, model in results:
-            message_public = MessagePublic.model_validate(message)
-            message_public.model = ModelPublic.model_validate(model)
+            message_public = MessagePublic.model_construct(
+                id=message.id,
+                chat_id=message.chat_id,
+                model_id=message.model_id,
+                type=message.type,
+                content=message.content,
+                tokens=message.tokens,
+                feedback=message.feedback,
+                is_deleted=message.is_deleted,
+                created_at=message.created_at,
+                updated_at=message.updated_at,
+                model=ModelPublic.model_validate(model)
+            )
             message_publics.append(message_public)
         
         return message_publics
@@ -237,8 +282,19 @@ class MessageService:
             result = self.message_repository.get_with_model(message.id)
             if result:
                 msg, model = result
-                message_public = MessagePublic.model_validate(msg)
-                message_public.model = ModelPublic.model_validate(model)
+                message_public = MessagePublic.model_construct(
+                    id=msg.id,
+                    chat_id=msg.chat_id,
+                    model_id=msg.model_id,
+                    type=msg.type,
+                    content=msg.content,
+                    tokens=msg.tokens,
+                    feedback=msg.feedback,
+                    is_deleted=msg.is_deleted,
+                    created_at=msg.created_at,
+                    updated_at=msg.updated_at,
+                    model=ModelPublic.model_validate(model)
+                )
                 message_publics.append(message_public)
         
         return message_publics
@@ -317,8 +373,19 @@ class MessageService:
             return None
         
         msg, model = result
-        message_public = MessagePublic.model_validate(msg)
-        message_public.model = ModelPublic.model_validate(model)
+        message_public = MessagePublic.model_construct(
+            id=msg.id,
+            chat_id=msg.chat_id,
+            model_id=msg.model_id,
+            type=msg.type,
+            content=msg.content,
+            tokens=msg.tokens,
+            feedback=msg.feedback,
+            is_deleted=msg.is_deleted,
+            created_at=msg.created_at,
+            updated_at=msg.updated_at,
+            model=ModelPublic.model_validate(model)
+        )
         return message_public
     
     def update_message_content(
@@ -363,8 +430,19 @@ class MessageService:
             return None
         
         msg, model = result
-        message_public = MessagePublic.model_validate(msg)
-        message_public.model = ModelPublic.model_validate(model)
+        message_public = MessagePublic.model_construct(
+            id=msg.id,
+            chat_id=msg.chat_id,
+            model_id=msg.model_id,
+            type=msg.type,
+            content=msg.content,
+            tokens=msg.tokens,
+            feedback=msg.feedback,
+            is_deleted=msg.is_deleted,
+            created_at=msg.created_at,
+            updated_at=msg.updated_at,
+            model=ModelPublic.model_validate(model)
+        )
         return message_public
     
     def delete_message(self, message_id: UUID) -> bool:
@@ -451,8 +529,19 @@ class MessageService:
             return None
         
         msg, model = result
-        message_public = MessagePublic.model_validate(msg)
-        message_public.model = ModelPublic.model_validate(model)
+        message_public = MessagePublic.model_construct(
+            id=msg.id,
+            chat_id=msg.chat_id,
+            model_id=msg.model_id,
+            type=msg.type,
+            content=msg.content,
+            tokens=msg.tokens,
+            feedback=msg.feedback,
+            is_deleted=msg.is_deleted,
+            created_at=msg.created_at,
+            updated_at=msg.updated_at,
+            model=ModelPublic.model_validate(model)
+        )
         return message_public
     
     def calculate_chat_tokens(self, chat_id: UUID) -> int:
