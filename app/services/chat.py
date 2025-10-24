@@ -12,12 +12,12 @@ class ChatService:
     def __init__(self, session: Session):
         self.repository = ChatRepository(session)
     
-    def create_chat(self, user_id: UUID, chat_data: ChatCreate) -> ChatPublic:
+    def create_chat(self, user_id: str, chat_data: ChatCreate) -> ChatPublic:
         """
         Create a new chat for a user.
         
         Args:
-            user_id: User UUID (from authenticated user)
+            user_id: User ID string (from authenticated user)
             chat_data: Chat creation data
             
         Returns:
@@ -28,7 +28,7 @@ class ChatService:
     
     def get_or_create_chat(
         self,
-        user_id: UUID,
+        user_id: str,
         chat_id: Optional[UUID] = None,
         auto_title: Optional[str] = None
     ) -> ChatPublic:
@@ -37,7 +37,7 @@ class ChatService:
         Useful for message creation flows where a chat may or may not exist.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             chat_id: Optional chat UUID. If None, creates a new chat
             auto_title: Title for auto-created chat (default: "New Chat")
             
@@ -59,13 +59,13 @@ class ChatService:
         chat_data = ChatCreate(title=title)
         return self.create_chat(user_id, chat_data)
     
-    def get_chat_by_id(self, chat_id: UUID, user_id: UUID) -> Optional[ChatPublic]:
+    def get_chat_by_id(self, chat_id: UUID, user_id: str) -> Optional[ChatPublic]:
         """
         Get a chat by ID for a specific user.
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             ChatPublic instance or None if not found or user doesn't own it
@@ -77,7 +77,7 @@ class ChatService:
     
     def get_all_user_chats(
         self,
-        user_id: UUID,
+        user_id: str,
         skip: int = 0,
         limit: int = 100,
         include_deleted: bool = False
@@ -86,7 +86,7 @@ class ChatService:
         Get all chats for a user with pagination.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             skip: Number of records to skip
             limit: Maximum number of records to return
             include_deleted: If True, include soft-deleted chats
@@ -104,7 +104,7 @@ class ChatService:
     
     def get_active_chats(
         self,
-        user_id: UUID,
+        user_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> list[ChatPublic]:
@@ -112,7 +112,7 @@ class ChatService:
         Get all active (non-deleted) chats for a user.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             skip: Number of records to skip
             limit: Maximum number of records to return
             
@@ -129,7 +129,7 @@ class ChatService:
     def update_chat(
         self,
         chat_id: UUID,
-        user_id: UUID,
+        user_id: str,
         chat_data: ChatUpdate
     ) -> Optional[ChatPublic]:
         """
@@ -137,7 +137,7 @@ class ChatService:
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             chat_data: Chat update data
             
         Returns:
@@ -148,39 +148,39 @@ class ChatService:
             return None
         return ChatPublic.model_validate(chat)
     
-    def delete_chat(self, chat_id: UUID, user_id: UUID) -> bool:
+    def delete_chat(self, chat_id: UUID, user_id: str) -> bool:
         """
         Soft delete a chat (mark as deleted, can be restored).
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             True if deleted, False if not found or user doesn't own it
         """
         return self.repository.soft_delete(chat_id, user_id)
     
-    def permanently_delete_chat(self, chat_id: UUID, user_id: UUID) -> bool:
+    def permanently_delete_chat(self, chat_id: UUID, user_id: str) -> bool:
         """
         Permanently delete a chat (cannot be restored).
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             True if deleted, False if not found or user doesn't own it
         """
         return self.repository.hard_delete(chat_id, user_id)
     
-    def restore_chat(self, chat_id: UUID, user_id: UUID) -> Optional[ChatPublic]:
+    def restore_chat(self, chat_id: UUID, user_id: str) -> Optional[ChatPublic]:
         """
         Restore a soft-deleted chat.
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             Restored ChatPublic instance or None if not found or user doesn't own it
@@ -190,12 +190,12 @@ class ChatService:
             return None
         return ChatPublic.model_validate(chat)
     
-    def count_user_chats(self, user_id: UUID, include_deleted: bool = False) -> int:
+    def count_user_chats(self, user_id: str, include_deleted: bool = False) -> int:
         """
         Count total chats for a user.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             include_deleted: If True, include soft-deleted chats in count
             
         Returns:
@@ -203,24 +203,24 @@ class ChatService:
         """
         return self.repository.count_by_user(user_id, include_deleted=include_deleted)
     
-    def count_active_chats(self, user_id: UUID) -> int:
+    def count_active_chats(self, user_id: str) -> int:
         """
         Count active (non-deleted) chats for a user.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             
         Returns:
             Count of active chats
         """
         return self.count_user_chats(user_id, include_deleted=False)
     
-    def count_deleted_chats(self, user_id: UUID) -> int:
+    def count_deleted_chats(self, user_id: str) -> int:
         """
         Count soft-deleted chats for a user.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             
         Returns:
             Count of deleted chats
@@ -231,7 +231,7 @@ class ChatService:
     
     def get_deleted_chats(
         self,
-        user_id: UUID,
+        user_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> list[ChatPublic]:
@@ -239,7 +239,7 @@ class ChatService:
         Get all soft-deleted chats for a user.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             skip: Number of records to skip
             limit: Maximum number of records to return
             
@@ -262,7 +262,7 @@ class ChatService:
     def update_chat_title(
         self,
         chat_id: UUID,
-        user_id: UUID,
+        user_id: str,
         title: str
     ) -> Optional[ChatPublic]:
         """
@@ -270,7 +270,7 @@ class ChatService:
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             title: New title
             
         Returns:
@@ -282,7 +282,7 @@ class ChatService:
     def update_chat_summary(
         self,
         chat_id: UUID,
-        user_id: UUID,
+        user_id: str,
         summary: str
     ) -> Optional[ChatPublic]:
         """
@@ -290,7 +290,7 @@ class ChatService:
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             summary: New summary
             
         Returns:
@@ -299,26 +299,26 @@ class ChatService:
         update_data = ChatUpdate(summary=summary)
         return self.update_chat(chat_id, user_id, update_data)
     
-    def chat_exists(self, chat_id: UUID, user_id: UUID) -> bool:
+    def chat_exists(self, chat_id: UUID, user_id: str) -> bool:
         """
         Check if a chat exists for a user.
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             True if chat exists and user owns it, False otherwise
         """
         return self.repository.get_by_id(chat_id, user_id) is not None
     
-    def bulk_delete_chats(self, chat_ids: list[UUID], user_id: UUID) -> dict[str, int]:
+    def bulk_delete_chats(self, chat_ids: list[UUID], user_id: str) -> dict[str, int]:
         """
         Soft delete multiple chats at once.
         
         Args:
             chat_ids: List of chat UUIDs
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             Dictionary with counts of successful and failed deletions
@@ -338,13 +338,13 @@ class ChatService:
             "total": len(chat_ids)
         }
     
-    def bulk_restore_chats(self, chat_ids: list[UUID], user_id: UUID) -> dict[str, int]:
+    def bulk_restore_chats(self, chat_ids: list[UUID], user_id: str) -> dict[str, int]:
         """
         Restore multiple soft-deleted chats at once.
         
         Args:
             chat_ids: List of chat UUIDs
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             Dictionary with counts of successful and failed restorations
@@ -367,14 +367,14 @@ class ChatService:
     def bulk_permanently_delete_chats(
         self,
         chat_ids: list[UUID],
-        user_id: UUID
+        user_id: str
     ) -> dict[str, int]:
         """
         Permanently delete multiple chats at once.
         
         Args:
             chat_ids: List of chat UUIDs
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             Dictionary with counts of successful and failed deletions
