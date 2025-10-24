@@ -171,6 +171,90 @@ async def count_user_chats(
     }
 
 
+@router.post("/bulk/delete", response_model=BulkOperationResponse)
+async def bulk_delete_chats(
+    request: BulkOperationRequest,
+    session: SessionDep,
+    user: CurrentUser
+):
+    """
+    Soft delete multiple chats at once.
+    
+    Args:
+        request: Bulk operation request containing list of chat IDs
+        session: Database session dependency
+        user: Authenticated user from Clerk session
+        
+    Returns:
+        Summary of successful and failed deletions
+    """
+    service = ChatService(session)
+    user_id = user.user_id
+    
+    result = service.bulk_delete_chats(request.chat_ids, user_id)
+    logger.info(
+        f"Bulk deleted chats for user {user_id}: "
+        f"successful={result['successful']}, failed={result['failed']}"
+    )
+    return BulkOperationResponse(**result)
+
+
+@router.post("/bulk/restore", response_model=BulkOperationResponse)
+async def bulk_restore_chats(
+    request: BulkOperationRequest,
+    session: SessionDep,
+    user: CurrentUser
+):
+    """
+    Restore multiple soft-deleted chats at once.
+    
+    Args:
+        request: Bulk operation request containing list of chat IDs
+        session: Database session dependency
+        user: Authenticated user from Clerk session
+        
+    Returns:
+        Summary of successful and failed restorations
+    """
+    service = ChatService(session)
+    user_id = user.user_id
+    
+    result = service.bulk_restore_chats(request.chat_ids, user_id)
+    logger.info(
+        f"Bulk restored chats for user {user_id}: "
+        f"successful={result['successful']}, failed={result['failed']}"
+    )
+    return BulkOperationResponse(**result)
+
+
+@router.post("/bulk/delete/permanent", response_model=BulkOperationResponse)
+async def bulk_permanently_delete_chats(
+    request: BulkOperationRequest,
+    session: SessionDep,
+    user: CurrentUser
+):
+    """
+    Permanently delete multiple chats at once (cannot be restored).
+    
+    Args:
+        request: Bulk operation request containing list of chat IDs
+        session: Database session dependency
+        user: Authenticated user from Clerk session
+        
+    Returns:
+        Summary of successful and failed deletions
+    """
+    service = ChatService(session)
+    user_id = user.user_id
+    
+    result = service.bulk_permanently_delete_chats(request.chat_ids, user_id)
+    logger.info(
+        f"Bulk permanently deleted chats for user {user_id}: "
+        f"successful={result['successful']}, failed={result['failed']}"
+    )
+    return BulkOperationResponse(**result)
+
+
 @router.get("/{chat_id}", response_model=ChatPublic)
 async def get_chat_by_id(
     chat_id: UUID,
@@ -420,90 +504,6 @@ async def restore_chat(
     
     logger.info(f"Restored chat {chat_id} for user {user_id}")
     return chat
-
-
-@router.post("/bulk/delete", response_model=BulkOperationResponse)
-async def bulk_delete_chats(
-    request: BulkOperationRequest,
-    session: SessionDep,
-    user: CurrentUser
-):
-    """
-    Soft delete multiple chats at once.
-    
-    Args:
-        request: Bulk operation request containing list of chat IDs
-        session: Database session dependency
-        user: Authenticated user from Clerk session
-        
-    Returns:
-        Summary of successful and failed deletions
-    """
-    service = ChatService(session)
-    user_id = user.user_id
-    
-    result = service.bulk_delete_chats(request.chat_ids, user_id)
-    logger.info(
-        f"Bulk deleted chats for user {user_id}: "
-        f"successful={result['successful']}, failed={result['failed']}"
-    )
-    return BulkOperationResponse(**result)
-
-
-@router.post("/bulk/restore", response_model=BulkOperationResponse)
-async def bulk_restore_chats(
-    request: BulkOperationRequest,
-    session: SessionDep,
-    user: CurrentUser
-):
-    """
-    Restore multiple soft-deleted chats at once.
-    
-    Args:
-        request: Bulk operation request containing list of chat IDs
-        session: Database session dependency
-        user: Authenticated user from Clerk session
-        
-    Returns:
-        Summary of successful and failed restorations
-    """
-    service = ChatService(session)
-    user_id = user.user_id
-    
-    result = service.bulk_restore_chats(request.chat_ids, user_id)
-    logger.info(
-        f"Bulk restored chats for user {user_id}: "
-        f"successful={result['successful']}, failed={result['failed']}"
-    )
-    return BulkOperationResponse(**result)
-
-
-@router.post("/bulk/delete/permanent", response_model=BulkOperationResponse)
-async def bulk_permanently_delete_chats(
-    request: BulkOperationRequest,
-    session: SessionDep,
-    user: CurrentUser
-):
-    """
-    Permanently delete multiple chats at once (cannot be restored).
-    
-    Args:
-        request: Bulk operation request containing list of chat IDs
-        session: Database session dependency
-        user: Authenticated user from Clerk session
-        
-    Returns:
-        Summary of successful and failed deletions
-    """
-    service = ChatService(session)
-    user_id = user.user_id
-    
-    result = service.bulk_permanently_delete_chats(request.chat_ids, user_id)
-    logger.info(
-        f"Bulk permanently deleted chats for user {user_id}: "
-        f"successful={result['successful']}, failed={result['failed']}"
-    )
-    return BulkOperationResponse(**result)
 
 
 @router.get("/{chat_id}/exists", response_model=dict)
