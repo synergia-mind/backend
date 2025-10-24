@@ -7,6 +7,12 @@ from app.main import app
 from app.core.db import get_session
 
 
+@pytest.fixture(scope="session")
+def anyio_backend():
+    """Configure anyio to only use asyncio backend."""
+    return "asyncio"
+
+
 @pytest.fixture(name="session")
 def session_fixture():
     """
