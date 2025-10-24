@@ -57,6 +57,10 @@ class Settings(BaseSettings):
 
     # Clerk Authentication
     CLERK_SECRET_KEY: str = "your-clerk-secret-key"
+    
+    # Authentication Cache Settings
+    AUTH_CACHE_TTL: int = 300  # Cache TTL in seconds (5 minutes)
+    AUTH_CACHE_MAX_SIZE: int = 1000  # Maximum number of cached sessions
 
     @property
     def IS_PRODUCTION(self) -> bool:
