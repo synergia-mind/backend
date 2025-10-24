@@ -160,7 +160,7 @@ class ChatRepository:
         statement = select(Chat).where(
             Chat.id == chat_id,
             Chat.user_id == user_id,
-            Chat.is_deleted == True
+            Chat.is_deleted
         )
         chat = self.session.exec(statement).first()
         if not chat:
