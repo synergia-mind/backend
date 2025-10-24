@@ -56,17 +56,30 @@ backend/
 │   │   ├── config.py        # Application settings & environment configuration
 │   │   ├── db.py            # Database engine and session management
 │   │   └── logging.py       # Logging configuration
+│   ├── repositories/        # Data access layer
+│   │   ├── model.py         # Model repository
+│   │   ├── chat.py          # Chat repository
+│   │   └── message.py       # Message repository
+│   ├── services/            # Business logic layer
+│   │   ├── model.py         # Model service
+│   │   ├── chat.py          # Chat service
+│   │   └── message.py       # Message service
 │   ├── logs/                # Application logs directory
 │   └── tests/               # Test suite
 │       ├── conftest.py      # Pytest configuration
-│       └── routes/
-│           └── test_health.py
+│       ├── routes/
+│       │   └── test_health.py
+│       ├── repositories/    # Repository layer tests
+│       │   ├── test_model.py
+│       │   ├── test_chat.py
+│       │   └── test_message.py
+│       └── services/        # Service layer tests
+│           ├── test_modelservice.py
+│           ├── test_chatservice.py
+│           └── test_messageservice.py
 ├── alembic/
 │   ├── env.py               # Alembic environment configuration
 │   └── versions/            # Database migration files
-│       ├── 1eea560ca34f_init_migration.py
-│       ├── c3508c834c40_add_chats_table.py
-│       └── f27f75ea4c47_add_messages_table.py
 ├── doc/
 │   ├── db.dbml              # Database schema definition
 │   └── openapi.yml          # OpenAPI specification
@@ -88,12 +101,34 @@ backend/
 - **Code Quality:** Ruff 0.14.1+
 - **Package Manager:** uv
 
+## 🏛️ Architecture
+
+The application follows a **layered architecture** pattern:
+
+- **API Layer** (`app/api/routes/`) - HTTP endpoints and request/response handling
+- **Service Layer** (`app/services/`) - Business logic and orchestration
+- **Repository Layer** (`app/repositories/`) - Data access and database operations
+- **Models** (`app/models.py`) - SQLModel tables and Pydantic schemas
+- **Core** (`app/core/`) - Configuration, database, and logging infrastructure
+
+This separation ensures clean code organization, testability, and maintainability.
+
 ## 📝 Available Make Commands
 
-To check make commands
+To check make commands:
 
 ```bash
 make help              # Show all available commands
+```
+
+### Development Commands
+
+```bash
+make dev               # Start development server
+make test              # Run all tests
+make test-cov          # Run tests with coverage report
+make lint              # Run code quality checks
+make format            # Format code with ruff
 ```
 
 ### Database Migration Commands
@@ -112,8 +147,15 @@ make migrate-reset                     # Reset to base migration (WARNING: destr
 The application uses PostgreSQL with the following main tables:
 
 - **models** - AI model configurations (name, provider, pricing)
-- **chats** - User chat sessions
-- **messages** - Chat messages with AI model associations
+- **chats** - User chat sessions (title, summary, user association)
+- **messages** - Chat messages with AI model associations (type, content, tokens, feedback)
+
+### Key Features
+
+- **Repository Pattern**: Clean data access layer for each entity
+- **Service Layer**: Business logic with validation and error handling
+- **Comprehensive Testing**: Full test coverage for repositories and services
+- **Type Safety**: SQLModel integration with Pydantic validation
 
 See [doc/db.dbml](./doc/db.dbml) for the complete database schema.
 
