@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "changeme"
     POSTGRES_DB: str = "sampledb"
 
+    # Clerk Authentication
+    CLERK_SECRET_KEY: str = "your-clerk-secret-key"
+
     @property
     def IS_PRODUCTION(self) -> bool:
         """
