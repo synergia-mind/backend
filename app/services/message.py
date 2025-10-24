@@ -23,13 +23,13 @@ class MessageService:
         self.chat_repository = ChatRepository(session)
         self.model_repository = ModelRepository(session)
     
-    def create_message(self, message_data: MessageCreate, user_id: Optional[UUID] = None) -> Optional[MessagePublic]:
+    def create_message(self, message_data: MessageCreate, user_id: Optional[str] = None) -> Optional[MessagePublic]:
         """
         Create a new message.
         
         Args:
             message_data: Message creation data
-            user_id: Optional user UUID - required if auto-creating a chat
+            user_id: Optional user ID string - required if auto-creating a chat
             
         Returns:
             Created message as MessagePublic or None if validation fails
@@ -78,7 +78,7 @@ class MessageService:
     
     def create_message_with_auto_chat(
         self,
-        user_id: UUID,
+        user_id: str,
         model_id: UUID,
         content: str,
         message_type: str = "user",
@@ -90,7 +90,7 @@ class MessageService:
         This is useful for starting a new conversation.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             model_id: Model UUID
             content: Message content
             message_type: Message type (default: "user")
