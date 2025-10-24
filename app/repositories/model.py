@@ -73,7 +73,7 @@ class ModelRepository:
         statement = select(Model)
         
         if enabled_only:
-            statement = statement.where(Model.is_enabled == True)
+            statement = statement.where(Model.is_enabled)
         
         statement = statement.offset(skip).limit(limit)
         return list(self.session.exec(statement).all())
