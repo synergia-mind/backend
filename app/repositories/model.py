@@ -168,7 +168,7 @@ class ModelRepository:
         statement = select(Model)
         
         if enabled_only:
-            statement = statement.where(Model.is_enabled == True)
+            statement = statement.where(Model.is_enabled)
         
         results = self.session.exec(statement).all()
         return len(list(results))
