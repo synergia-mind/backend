@@ -31,18 +31,27 @@ The backend follows a **layered architecture** pattern:
 ├─────────────────────────────────────┤
 │          API Layer                  │
 │    (app/api/routes/*.py)            │
+│    Request/Response handling        │
 ├─────────────────────────────────────┤
-│        Business Logic               │
-│         (Future: services/)         │
+│       Service Layer                 │
+│      (app/services/)                │
+│    Business logic & orchestration   │
+├─────────────────────────────────────┤
+│     Repository Layer                │
+│    (app/repositories/)              │
+│    Data access & queries            │
 ├─────────────────────────────────────┤
 │         Data Models                 │
 │        (app/models.py)              │
+│    SQLModel tables & schemas        │
 ├─────────────────────────────────────┤
 │      Database Layer                 │
 │        (app/core/db.py)             │
+│    Connection & session management  │
 ├─────────────────────────────────────┤
 │      Core Infrastructure            │
 │  (app/core/config.py, logging.py)   │
+│    Configuration & logging          │
 └─────────────────────────────────────┘
 ```
 
@@ -58,13 +67,26 @@ The backend follows a **layered architecture** pattern:
    - Route definitions grouped by feature
    - Request/response handling
    - API versioning via prefix
+   - Delegates to service layer
 
-3. **Core (`app/core/`)**
+3. **Service Layer (`app/services/`)**
+   - Business logic and validation
+   - Orchestration of repository operations
+   - Error handling and data transformation
+   - Current services: `ModelService`, `ChatService`, `MessageService`
+
+4. **Repository Layer (`app/repositories/`)**
+   - Data access patterns
+   - Database queries and operations
+   - CRUD operations
+   - Current repositories: `ModelRepository`, `ChatRepository`, `MessageRepository`
+
+5. **Core (`app/core/`)**
    - `config.py`: Environment-based settings
    - `db.py`: Database engine and session management
    - `logging.py`: Centralized logging configuration
 
-4. **Models (`app/models.py`)**
+6. **Models (`app/models.py`)**
    - SQLModel table definitions (Model, Chat, Message)
    - Pydantic schemas for API requests/responses
    - Data validation and serialization
@@ -200,6 +222,16 @@ app/
 │   └── routes/
 │       ├── __init__.py
 │       └── health.py      # Health check endpoints
+├── services/              # Business logic layer
+│   ├── __init__.py
+│   ├── model.py           # Model service
+│   ├── chat.py            # Chat service
+│   └── message.py         # Message service
+├── repositories/          # Data access layer
+│   ├── __init__.py
+│   ├── model.py           # Model repository
+│   ├── chat.py            # Chat repository
+│   └── message.py         # Message repository
 ├── core/
 │   ├── __init__.py
 │   ├── config.py          # Settings and configuration
@@ -208,8 +240,16 @@ app/
 ├── logs/                  # Application logs
 └── tests/
     ├── conftest.py        # Pytest fixtures
-    └── routes/
-        └── test_health.py
+    ├── routes/
+    │   └── test_health.py
+    ├── repositories/      # Repository layer tests
+    │   ├── test_model.py
+    │   ├── test_chat.py
+    │   └── test_message.py
+    └── services/          # Service layer tests
+        ├── test_modelservice.py
+        ├── test_chatservice.py
+        └── test_messageservice.py
 alembic/
 ├── env.py                 # Alembic environment
 └── versions/              # Database migrations
@@ -304,7 +344,219 @@ make migrate-upgrade
 
 > See [Database Management](#database-management) section for complete migration workflow and commands.
 
-### 3. Add Configuration Settings
+### 3. Create Repository Layer
+
+Create a repository for data access:
+
+```python
+# app/repositories/user.py
+from typing import Optional
+from uuid import UUID
+from sqlmodel import Session, select
+from app.models import User, UserCreate, UserUpdate
+
+class UserRepository:
+    """Repository for User data access."""
+    
+    def __init__(self, session: Session):
+        self.session = session
+    
+    def create(self, user_data: UserCreate) -> User:
+        """Create a new user."""
+        db_user = User.model_validate(user_data)
+        self.session.add(db_user)
+        self.session.commit()
+        self.session.refresh(db_user)
+        return db_user
+    
+    def get_by_id(self, user_id: UUID) -> Optional[User]:
+        """Get user by ID."""
+        statement = select(User).where(User.id == user_id)
+        return self.session.exec(statement).first()
+    
+    def get_by_email(self, email: str) -> Optional[User]:
+        """Get user by email."""
+        statement = select(User).where(User.email == email)
+        return self.session.exec(statement).first()
+    
+    def list_all(self) -> list[User]:
+        """List all users."""
+        statement = select(User)
+        return list(self.session.exec(statement).all())
+    
+    def update(self, user_id: UUID, user_data: UserUpdate) -> Optional[User]:
+        """Update a user."""
+        db_user = self.get_by_id(user_id)
+        if not db_user:
+            return None
+        
+        update_data = user_data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_user, key, value)
+        
+        self.session.add(db_user)
+        self.session.commit()
+        self.session.refresh(db_user)
+        return db_user
+    
+    def delete(self, user_id: UUID) -> bool:
+        """Soft delete a user."""
+        db_user = self.get_by_id(user_id)
+        if not db_user:
+            return False
+        
+        db_user.is_deleted = True
+        self.session.add(db_user)
+        self.session.commit()
+        return True
+```
+
+### 4. Create Service Layer
+
+Create a service for business logic:
+
+```python
+# app/services/user.py
+from typing import Optional
+from uuid import UUID
+from sqlmodel import Session
+from app.repositories.user import UserRepository
+from app.models import User, UserCreate, UserUpdate, UserPublic
+
+class UserService:
+    """Service layer for User business logic."""
+    
+    def __init__(self, session: Session):
+        self.repository = UserRepository(session)
+    
+    def create_user(self, user_data: UserCreate) -> UserPublic:
+        """
+        Create a new user.
+        
+        Args:
+            user_data: User creation data
+            
+        Returns:
+            Created user as UserPublic
+            
+        Raises:
+            ValueError: If email already exists
+        """
+        # Check if email exists
+        existing_user = self.repository.get_by_email(user_data.email)
+        if existing_user:
+            raise ValueError(f"User with email {user_data.email} already exists")
+        
+        # Create user
+        user = self.repository.create(user_data)
+        return UserPublic.model_validate(user)
+    
+    def get_user(self, user_id: UUID) -> Optional[UserPublic]:
+        """Get a user by ID."""
+        user = self.repository.get_by_id(user_id)
+        if not user:
+            return None
+        return UserPublic.model_validate(user)
+    
+    def list_users(self) -> list[UserPublic]:
+        """List all non-deleted users."""
+        users = self.repository.list_all()
+        return [UserPublic.model_validate(user) for user in users if not user.is_deleted]
+    
+    def update_user(self, user_id: UUID, user_data: UserUpdate) -> Optional[UserPublic]:
+        """Update a user."""
+        user = self.repository.update(user_id, user_data)
+        if not user:
+            return None
+        return UserPublic.model_validate(user)
+    
+    def delete_user(self, user_id: UUID) -> bool:
+        """Soft delete a user."""
+        return self.repository.delete(user_id)
+```
+
+### 5. Update Routes to Use Services
+
+Update your routes to use the service layer:
+
+```python
+# app/api/routes/users.py
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session
+from uuid import UUID
+from app.core.db import get_session
+from app.models import UserPublic, UserCreate, UserUpdate
+from app.services.user import UserService
+
+router = APIRouter()
+
+@router.get("/", response_model=list[UserPublic])
+async def list_users(session: Session = Depends(get_session)):
+    """List all users."""
+    service = UserService(session)
+    return service.list_users()
+
+@router.post("/", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user: UserCreate,
+    session: Session = Depends(get_session)
+):
+    """Create a new user."""
+    service = UserService(session)
+    try:
+        return service.create_user(user)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+@router.get("/{user_id}", response_model=UserPublic)
+async def get_user(
+    user_id: UUID,
+    session: Session = Depends(get_session)
+):
+    """Get a user by ID."""
+    service = UserService(session)
+    user = service.get_user(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User {user_id} not found"
+        )
+    return user
+
+@router.patch("/{user_id}", response_model=UserPublic)
+async def update_user(
+    user_id: UUID,
+    user_data: UserUpdate,
+    session: Session = Depends(get_session)
+):
+    """Update a user."""
+    service = UserService(session)
+    user = service.update_user(user_id, user_data)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User {user_id} not found"
+        )
+    return user
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: UUID,
+    session: Session = Depends(get_session)
+):
+    """Delete a user."""
+    service = UserService(session)
+    if not service.delete_user(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User {user_id} not found"
+        )
+```
+
+### 6. Add Configuration Settings
 
 Update `app/core/config.py`:
 
@@ -315,33 +567,6 @@ class Settings(BaseSettings):
     # New setting
     MAX_CONNECTIONS: int = 10
     FEATURE_FLAG_NEW_FEATURE: bool = False
-```
-
-### 5. Create Service Layer (Optional)
-
-For complex business logic, create a service:
-
-```python
-# app/services/chat_service.py
-from sqlmodel import Session, select
-from models import Chat, ChatCreate, ChatPublic
-from datetime import datetime, timezone
-
-class ChatService:
-    def __init__(self, session: Session):
-        self.session = session
-    
-    async def create_chat(self, user_id: str, chat_data: ChatCreate) -> ChatPublic:
-        """Create a new chat."""
-        db_chat = Chat(
-            **chat_data.model_dump(),
-            user_id=user_id,
-            created_at=datetime.now(timezone.utc)
-        )
-        self.session.add(db_chat)
-        self.session.commit()
-        self.session.refresh(db_chat)
-        return ChatPublic.model_validate(db_chat)
 ```
 
 ## 🗄️ Database Management
@@ -476,18 +701,31 @@ The following loggers are set to WARNING level to reduce noise:
 ```text
 app/tests/
 ├── __init__.py
-├── conftest.py           # Pytest fixtures
-└── routes/
-    └── test_health.py    # Health check tests
+├── conftest.py              # Pytest fixtures
+├── routes/
+│   └── test_health.py       # Route tests
+├── repositories/            # Repository layer tests
+│   ├── test_model.py
+│   ├── test_chat.py
+│   └── test_message.py
+└── services/                # Service layer tests
+    ├── test_modelservice.py
+    ├── test_chatservice.py
+    └── test_messageservice.py
 ```
 
 ### Writing Tests
+
+#### Test Fixtures
 
 ```python
 # app/tests/conftest.py
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session, create_engine, SQLModel
+from sqlmodel.pool import StaticPool
 from app.main import app
+from app.core.db import get_session
 
 @pytest.fixture(name="client")
 def client_fixture():
@@ -495,6 +733,107 @@ def client_fixture():
     client = TestClient(app)
     yield client
 
+@pytest.fixture(name="session")
+def session_fixture():
+    """Create an in-memory database session for testing."""
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
+```
+
+#### Repository Tests
+
+```python
+# app/tests/repositories/test_model.py
+import pytest
+from uuid import uuid4
+from app.repositories.model import ModelRepository
+from app.models import ModelCreate
+
+def test_create_model(session):
+    """Test creating a model."""
+    repository = ModelRepository(session)
+    model_data = ModelCreate(
+        name="GPT-4",
+        provider="OpenAI",
+        price_per_million_tokens=10.0,
+        is_enabled=True
+    )
+    
+    model = repository.create(model_data)
+    
+    assert model.id is not None
+    assert model.name == "GPT-4"
+    assert model.provider == "OpenAI"
+
+def test_get_by_id(session):
+    """Test retrieving a model by ID."""
+    repository = ModelRepository(session)
+    
+    # Create a model
+    model_data = ModelCreate(
+        name="Claude",
+        provider="Anthropic",
+        price_per_million_tokens=15.0
+    )
+    created_model = repository.create(model_data)
+    
+    # Retrieve it
+    retrieved_model = repository.get_by_id(created_model.id)
+    
+    assert retrieved_model is not None
+    assert retrieved_model.id == created_model.id
+    assert retrieved_model.name == "Claude"
+```
+
+#### Service Tests
+
+```python
+# app/tests/services/test_modelservice.py
+import pytest
+from uuid import uuid4
+from app.services.model import ModelService
+from app.models import ModelCreate
+
+def test_create_model_success(session):
+    """Test successful model creation."""
+    service = ModelService(session)
+    model_data = ModelCreate(
+        name="GPT-4",
+        provider="OpenAI",
+        price_per_million_tokens=10.0
+    )
+    
+    model = service.create_model(model_data)
+    
+    assert model.id is not None
+    assert model.name == "GPT-4"
+
+def test_create_duplicate_model_fails(session):
+    """Test that creating a duplicate model raises an error."""
+    service = ModelService(session)
+    model_data = ModelCreate(
+        name="GPT-4",
+        provider="OpenAI",
+        price_per_million_tokens=10.0
+    )
+    
+    # Create first model
+    service.create_model(model_data)
+    
+    # Attempt to create duplicate
+    with pytest.raises(ValueError, match="already exists"):
+        service.create_model(model_data)
+```
+
+#### Route Tests
+
+```python
 # app/tests/routes/test_health.py
 from fastapi.testclient import TestClient
 from app.core import settings
@@ -510,13 +849,37 @@ def test_health_check(client: TestClient):
 ### Running Tests
 
 ```bash
-# Run tests with coverage
+# Run all tests
 make test
 
-# This executes:
-# uv run coverage run --source=app -m pytest
-# uv run coverage report --show-missing
+# Run tests with coverage report
+make test-cov
+
+# Run specific test file
+uv run pytest app/tests/services/test_modelservice.py
+
+# Run specific test function
+uv run pytest app/tests/services/test_modelservice.py::test_create_model_success
+
+# Run with verbose output
+uv run pytest -v
+
+# Run with print statements visible
+uv run pytest -s
 ```
+
+### Test Coverage
+
+The project maintains comprehensive test coverage across all layers:
+
+- **Repository Layer**: CRUD operations, edge cases, error handling
+- **Service Layer**: Business logic, validation, error scenarios
+- **API Layer**: Endpoint responses, status codes, error handling
+
+Current coverage includes:
+- `ModelRepository` and `ModelService`
+- `ChatRepository` and `ChatService`
+- `MessageRepository` and `MessageService`
 
 ## ✨ Best Practices
 
@@ -823,7 +1186,86 @@ POSTGRES_DB=${DATABASE_NAME}
 - [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
 - [Python Type Hints](https://docs.python.org/3/library/typing.html)
 
+## 🏗️ Design Patterns
+
+### Repository Pattern
+
+The repository pattern provides a clean separation between data access logic and business logic:
+
+**Benefits:**
+- Centralizes data access logic
+- Makes testing easier with mock repositories
+- Allows switching data sources without changing business logic
+- Provides consistent interface for data operations
+
+**Example:**
+```python
+# Repository handles only data access
+class ChatRepository:
+    def get_by_id(self, chat_id: UUID) -> Optional[Chat]:
+        statement = select(Chat).where(Chat.id == chat_id)
+        return self.session.exec(statement).first()
+
+# Service uses repository for business logic
+class ChatService:
+    def get_chat(self, chat_id: UUID) -> Optional[ChatPublic]:
+        chat = self.repository.get_by_id(chat_id)
+        if not chat or chat.is_deleted:
+            return None
+        return ChatPublic.model_validate(chat)
+```
+
+### Service Layer Pattern
+
+The service layer encapsulates business logic and orchestrates operations:
+
+**Benefits:**
+- Keeps routes thin and focused on HTTP concerns
+- Centralizes business rules and validation
+- Enables code reuse across different endpoints
+- Simplifies testing of business logic
+
+**Example:**
+```python
+# Service handles validation and orchestration
+class MessageService:
+    def create_message(self, message_data: MessageCreate) -> MessagePublic:
+        # Validate chat exists
+        chat = self.chat_repository.get_by_id(message_data.chat_id)
+        if not chat:
+            raise ValueError("Chat not found")
+        
+        # Validate model exists and is enabled
+        model = self.model_repository.get_by_id(message_data.model_id)
+        if not model or not model.is_enabled:
+            raise ValueError("Model not available")
+        
+        # Create message
+        message = self.repository.create(message_data)
+        return MessagePublic.model_validate(message)
+```
+
+### Dependency Injection
+
+FastAPI's dependency injection system is used throughout:
+
+```python
+# Define dependency
+def get_session():
+    with Session(engine) as session:
+        yield session
+
+# Use in routes
+@router.get("/chats/{chat_id}")
+async def get_chat(
+    chat_id: UUID,
+    session: Session = Depends(get_session)
+):
+    service = ChatService(session)
+    return service.get_chat(chat_id)
+```
+
 ---
 
-**Last Updated**: October 23, 2025  
+**Last Updated**: October 24, 2025  
 **Current Version**: 0.1.0

@@ -73,7 +73,6 @@ class ModelPublic(ModelBase):
 class ChatBase(SQLModel):
     title: Optional[str] = Field(default=None, max_length=500)
     summary: Optional[str] = None
-    is_deleted: bool = Field(default=False)
 
 
 class Chat(ChatBase, table=True):
@@ -81,22 +80,24 @@ class Chat(ChatBase, table=True):
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID
+    is_deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class ChatCreate(SQLModel):
+class ChatCreate(ChatBase):
+    pass
+
+
+class ChatUpdate(SQLModel):
     title: Optional[str] = Field(default=None, max_length=500)
     summary: Optional[str] = None
-
-
-class ChatUpdate(ChatBase):
-    pass
 
 
 class ChatPublic(ChatBase):
     id: uuid.UUID
     user_id: uuid.UUID
+    is_deleted: bool
     created_at: datetime
     updated_at: datetime
 
