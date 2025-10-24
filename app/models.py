@@ -79,7 +79,7 @@ class Chat(ChatBase, table=True):
     __tablename__ = "chats"
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID
+    user_id: str = Field(max_length=255)
     is_deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -96,7 +96,7 @@ class ChatUpdate(SQLModel):
 
 class ChatPublic(ChatBase):
     id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: str
     is_deleted: bool
     created_at: datetime
     updated_at: datetime
