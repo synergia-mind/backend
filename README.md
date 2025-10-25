@@ -34,6 +34,24 @@ make migrate-upgrade
 make dev
 ```
 
+### Running with Docker
+
+```bash
+# Build the Docker image
+docker build -t synergia-backend .
+
+# Run the container
+docker run -p 8000:8000 \
+  -e POSTGRES_SERVER=host.docker.internal \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=yourpassword \
+  -e POSTGRES_DB=synergia_mind \
+  -e CLERK_SECRET_KEY=your-clerk-secret \
+  synergia-backend
+```
+
+Note: The Docker image uses multi-stage builds for optimal size and security.
+
 ### API Documentation
 
 For a complete list of available endpoints, see:
