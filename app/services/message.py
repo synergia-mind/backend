@@ -181,6 +181,52 @@ class MessageService:
         )
         return message_public
     
+    def get_messages_by_ids(self, message_ids: list[UUID]) -> list[MessagePublic]:
+        """
+        Get multiple messages by their IDs with their associated models.
+        
+        Args:
+            message_ids: List of message UUIDs
+            
+        Returns:
+            List of MessagePublic instances (only for found messages)
+        """
+        messages = []
+        for message_id in message_ids:
+            message_public = self.get_message_by_id(message_id)
+            if message_public:
+                messages.append(message_public)
+        return messages
+    
+    def get_accessible_message_ids(self, message_ids: list[UUID], user_id: str) -> list[UUID]:
+        """
+        Filter message IDs to only those the user has access to (via chat ownership).
+        
+        Args:
+            message_ids: List of message UUIDs to filter
+            user_id: User ID string to verify chat ownership
+            
+        Returns:
+            List of message UUIDs that belong to chats owned by the user
+        """
+        # Get all messages by IDs
+        messages = self.get_messages_by_ids(message_ids)
+        
+        # Extract unique chat IDs from messages
+        chat_ids = list({msg.chat_id for msg in messages})
+        
+        # Get all chats owned by the user
+        owned_chat_ids = set()
+        for chat_id in chat_ids:
+            chat = self.chat_repository.get_by_id(chat_id, user_id)
+            if chat:
+                owned_chat_ids.add(chat.id)
+        
+        # Filter messages to those in chats owned by the user
+        accessible_ids = [msg.id for msg in messages if msg.chat_id in owned_chat_ids]
+        
+        return accessible_ids
+    
     def get_chat_messages(
         self,
         chat_id: UUID,
