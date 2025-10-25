@@ -187,13 +187,8 @@ async def bulk_permanently_delete_messages(
     user_id = user.user_id
     
     # Filter message IDs to only those the user has access to
-    accessible_ids = []
-    for message_id in request.message_ids:
-        message = service.get_message_by_id(message_id)
-        if message:
-            chat = chat_service.get_chat_by_id(message.chat_id, user_id)
-            if chat:
-                accessible_ids.append(message_id)
+    # Use a batch query to get accessible message IDs in one go
+    accessible_ids = service.get_accessible_message_ids(request.message_ids, user_id)
     
     result = service.bulk_permanently_delete_messages(accessible_ids)
     logger.info(
