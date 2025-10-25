@@ -145,14 +145,15 @@ async def bulk_delete_messages(
     chat_service = ChatService(session)
     user_id = user.user_id
     
-    # Filter message IDs to only those the user has access to
-    accessible_ids = []
-    for message_id in request.message_ids:
-        message = service.get_message_by_id(message_id)
-        if message:
-            chat = chat_service.get_chat_by_id(message.chat_id, user_id)
-            if chat:
-                accessible_ids.append(message_id)
+    # Batch fetch all messages by IDs
+    messages = service.get_messages_by_ids(request.message_ids)
+    # Extract unique chat IDs from messages
+    chat_ids = list({msg.chat_id for msg in messages})
+    # Batch fetch all chats owned by the user
+    chats = chat_service.get_chats_by_ids_and_user(chat_ids, user_id)
+    owned_chat_ids = {chat.id for chat in chats}
+    # Filter messages to those in chats owned by the user
+    accessible_ids = [msg.id for msg in messages if msg.chat_id in owned_chat_ids]
     
     result = service.bulk_delete_messages(accessible_ids)
     logger.info(
