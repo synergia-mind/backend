@@ -1,5 +1,5 @@
-from core.config import Settings
-from core.logging import get_logger
+from app.core.config import Settings
+from app.core.logging import get_logger
 from sqlmodel import Session, SQLModel, create_engine, select
 
 settings = Settings()

@@ -51,7 +51,7 @@ def test_chat_fixture(chat_repository: ChatRepository):
     """
     Create a test chat for messages.
     """
-    user_id = uuid4()
+    user_id = f"user_{uuid4().hex[:24]}"
     chat_data = ChatCreate(title="Test Chat")
     return chat_repository.create(user_id, chat_data)
 
@@ -336,7 +336,7 @@ class TestMessageRepositoryGetAllByChat:
     
     def test_get_all_by_chat_isolation(self, message_repository: MessageRepository, chat_repository: ChatRepository, test_model):
         """Test that messages are isolated by chat."""
-        user_id = uuid4()
+        user_id = f"user_{uuid4().hex[:24]}"
         chat1 = chat_repository.create(user_id, ChatCreate(title="Chat 1"))
         chat2 = chat_repository.create(user_id, ChatCreate(title="Chat 2"))
         
@@ -1014,7 +1014,7 @@ class TestMessageRepositoryIntegration:
         test_model
     ):
         """Test that messages are properly isolated between chats."""
-        user_id = uuid4()
+        user_id = f"user_{uuid4().hex[:24]}"
         chat1 = chat_repository.create(user_id, ChatCreate(title="Chat 1"))
         chat2 = chat_repository.create(user_id, ChatCreate(title="Chat 2"))
         

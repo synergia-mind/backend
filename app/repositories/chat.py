@@ -11,12 +11,12 @@ class ChatRepository:
     def __init__(self, session: Session):
         self.session = session
     
-    def create(self, user_id: UUID, chat_data: ChatCreate) -> Chat:
+    def create(self, user_id: str, chat_data: ChatCreate) -> Chat:
         """
         Create a new chat.
         
         Args:
-            user_id: User UUID (from authenticated user)
+            user_id: User ID string (from authenticated user)
             chat_data: Chat creation data
             
         Returns:
@@ -31,13 +31,13 @@ class ChatRepository:
         self.session.refresh(chat)
         return chat
     
-    def get_by_id(self, chat_id: UUID, user_id: UUID) -> Optional[Chat]:
+    def get_by_id(self, chat_id: UUID, user_id: str) -> Optional[Chat]:
         """
         Get a chat by ID for a specific user.
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             Chat instance or None if not found or user doesn't own it
@@ -51,7 +51,7 @@ class ChatRepository:
     
     def get_all_by_user(
         self, 
-        user_id: UUID,
+        user_id: str,
         skip: int = 0, 
         limit: int = 100,
         include_deleted: bool = False
@@ -60,7 +60,7 @@ class ChatRepository:
         Get all chats for a user with pagination.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             skip: Number of records to skip
             limit: Maximum number of records to return
             include_deleted: If True, include deleted chats
@@ -76,13 +76,13 @@ class ChatRepository:
         statement = statement.order_by(desc(Chat.updated_at)).offset(skip).limit(limit)
         return list(self.session.exec(statement).all())
     
-    def update(self, chat_id: UUID, user_id: UUID, chat_data: ChatUpdate) -> Optional[Chat]:
+    def update(self, chat_id: UUID, user_id: str, chat_data: ChatUpdate) -> Optional[Chat]:
         """
         Update a chat.
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             chat_data: Chat update data
             
         Returns:
@@ -102,13 +102,13 @@ class ChatRepository:
         self.session.refresh(chat)
         return chat
     
-    def soft_delete(self, chat_id: UUID, user_id: UUID) -> bool:
+    def soft_delete(self, chat_id: UUID, user_id: str) -> bool:
         """
         Soft delete a chat (mark as deleted).
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             True if deleted, False if not found or user doesn't own it
@@ -123,13 +123,13 @@ class ChatRepository:
         self.session.commit()
         return True
     
-    def hard_delete(self, chat_id: UUID, user_id: UUID) -> bool:
+    def hard_delete(self, chat_id: UUID, user_id: str) -> bool:
         """
         Hard delete a chat (permanently remove from database).
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             True if deleted, False if not found or user doesn't own it
@@ -146,13 +146,13 @@ class ChatRepository:
         self.session.commit()
         return True
     
-    def restore(self, chat_id: UUID, user_id: UUID) -> Optional[Chat]:
+    def restore(self, chat_id: UUID, user_id: str) -> Optional[Chat]:
         """
         Restore a soft-deleted chat.
         
         Args:
             chat_id: Chat UUID
-            user_id: User UUID to verify ownership
+            user_id: User ID string to verify ownership
             
         Returns:
             Restored chat instance or None if not found or user doesn't own it
@@ -173,12 +173,12 @@ class ChatRepository:
         self.session.refresh(chat)
         return chat
     
-    def count_by_user(self, user_id: UUID, include_deleted: bool = False) -> int:
+    def count_by_user(self, user_id: str, include_deleted: bool = False) -> int:
         """
         Count total chats for a user.
         
         Args:
-            user_id: User UUID
+            user_id: User ID string
             include_deleted: If True, include deleted chats in count
             
         Returns:

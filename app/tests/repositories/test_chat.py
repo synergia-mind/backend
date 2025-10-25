@@ -17,17 +17,17 @@ def repository_fixture(session: Session):
 @pytest.fixture(name="user_id")
 def user_id_fixture():
     """
-    Provide a sample user ID.
+    Provide a sample user ID (Clerk-style string ID).
     """
-    return uuid4()
+    return f"user_{uuid4().hex[:24]}"
 
 
 @pytest.fixture(name="other_user_id")
 def other_user_id_fixture():
     """
-    Provide a different user ID for testing authorization.
+    Provide a different user ID for testing authorization (Clerk-style string ID).
     """
-    return uuid4()
+    return f"user_{uuid4().hex[:24]}"
 
 
 @pytest.fixture(name="sample_chat_data")

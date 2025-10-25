@@ -13,15 +13,15 @@ def chat_service(session: Session):
 
 
 @pytest.fixture
-def user_id() -> UUID:
-    """Sample user ID."""
-    return uuid4()
+def user_id() -> str:
+    """Sample user ID (Clerk-style string ID)."""
+    return f"user_{uuid4().hex[:24]}"
 
 
 @pytest.fixture
-def another_user_id() -> UUID:
-    """Another sample user ID."""
-    return uuid4()
+def another_user_id() -> str:
+    """Another sample user ID (Clerk-style string ID)."""
+    return f"user_{uuid4().hex[:24]}"
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ class TestCreateChat:
     def test_create_chat_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test successful chat creation."""
@@ -62,7 +62,7 @@ class TestCreateChat:
         assert result.created_at is not None
         assert result.updated_at is not None
     
-    def test_create_chat_minimal_data(self, chat_service: ChatService, user_id: UUID):
+    def test_create_chat_minimal_data(self, chat_service: ChatService, user_id: str):
         """Test creating chat with minimal data (no title/summary)."""
         chat_data = ChatCreate()
         result = chat_service.create_chat(user_id, chat_data)
@@ -72,7 +72,7 @@ class TestCreateChat:
         assert result.title is None
         assert result.summary is None
     
-    def test_create_chat_with_title_only(self, chat_service: ChatService, user_id: UUID):
+    def test_create_chat_with_title_only(self, chat_service: ChatService, user_id: str):
         """Test creating chat with only title."""
         chat_data = ChatCreate(title="Only Title")
         result = chat_service.create_chat(user_id, chat_data)
@@ -87,7 +87,7 @@ class TestGetOrCreateChat:
     def test_get_existing_chat(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test getting an existing chat."""
@@ -101,7 +101,7 @@ class TestGetOrCreateChat:
     def test_create_new_chat_when_no_id(
         self,
         chat_service: ChatService,
-        user_id: UUID
+        user_id: str
     ):
         """Test creating new chat when chat_id is None."""
         result = chat_service.get_or_create_chat(user_id, chat_id=None)
@@ -113,7 +113,7 @@ class TestGetOrCreateChat:
     def test_create_new_chat_with_auto_title(
         self,
         chat_service: ChatService,
-        user_id: UUID
+        user_id: str
     ):
         """Test creating new chat with custom auto_title."""
         result = chat_service.get_or_create_chat(
@@ -127,7 +127,7 @@ class TestGetOrCreateChat:
     def test_get_or_create_chat_nonexistent_id(
         self,
         chat_service: ChatService,
-        user_id: UUID
+        user_id: str
     ):
         """Test error when trying to get non-existent chat."""
         non_existent_id = uuid4()
@@ -138,8 +138,8 @@ class TestGetOrCreateChat:
     def test_get_or_create_chat_wrong_user(
         self,
         chat_service: ChatService,
-        user_id: UUID,
-        another_user_id: UUID,
+        user_id: str,
+        another_user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test error when user tries to access another user's chat."""
@@ -155,7 +155,7 @@ class TestGetChatById:
     def test_get_chat_by_id_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test successful retrieval by ID."""
@@ -167,7 +167,7 @@ class TestGetChatById:
         assert result.id == created.id
         assert result.title == created.title
     
-    def test_get_chat_by_id_not_found(self, chat_service: ChatService, user_id: UUID):
+    def test_get_chat_by_id_not_found(self, chat_service: ChatService, user_id: str):
         """Test retrieval with non-existent ID returns None."""
         result = chat_service.get_chat_by_id(uuid4(), user_id)
         
@@ -176,8 +176,8 @@ class TestGetChatById:
     def test_get_chat_by_id_wrong_user(
         self,
         chat_service: ChatService,
-        user_id: UUID,
-        another_user_id: UUID,
+        user_id: str,
+        another_user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test that user cannot access another user's chat."""
@@ -190,7 +190,7 @@ class TestGetChatById:
     def test_get_chat_by_id_deleted_chat(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test that deleted chats are not returned."""
@@ -205,7 +205,7 @@ class TestGetChatById:
 class TestGetAllUserChats:
     """Tests for get_all_user_chats method."""
     
-    def test_get_all_user_chats_empty(self, chat_service: ChatService, user_id: UUID):
+    def test_get_all_user_chats_empty(self, chat_service: ChatService, user_id: str):
         """Test getting chats when none exist."""
         result = chat_service.get_all_user_chats(user_id)
         
@@ -214,7 +214,7 @@ class TestGetAllUserChats:
     def test_get_all_user_chats_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -229,7 +229,7 @@ class TestGetAllUserChats:
     def test_get_all_user_chats_pagination(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -246,7 +246,7 @@ class TestGetAllUserChats:
     def test_get_all_user_chats_excludes_deleted(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -264,7 +264,7 @@ class TestGetAllUserChats:
     def test_get_all_user_chats_include_deleted(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -282,8 +282,8 @@ class TestGetAllUserChats:
     def test_get_all_user_chats_isolation(
         self,
         chat_service: ChatService,
-        user_id: UUID,
-        another_user_id: UUID,
+        user_id: str,
+        another_user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test that users only see their own chats."""
@@ -302,7 +302,7 @@ class TestGetActiveChats:
     def test_get_active_chats(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -325,7 +325,7 @@ class TestUpdateChat:
     def test_update_chat_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test successful chat update."""
@@ -344,7 +344,7 @@ class TestUpdateChat:
     def test_update_chat_partial(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test partial update (only title)."""
@@ -360,7 +360,7 @@ class TestUpdateChat:
     def test_update_chat_not_found(
         self,
         chat_service: ChatService,
-        user_id: UUID
+        user_id: str
     ):
         """Test updating non-existent chat returns None."""
         update_data = ChatUpdate(title="New Title")
@@ -371,8 +371,8 @@ class TestUpdateChat:
     def test_update_chat_wrong_user(
         self,
         chat_service: ChatService,
-        user_id: UUID,
-        another_user_id: UUID,
+        user_id: str,
+        another_user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test that user cannot update another user's chat."""
@@ -390,7 +390,7 @@ class TestDeleteChat:
     def test_delete_chat_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test successful soft delete."""
@@ -402,7 +402,7 @@ class TestDeleteChat:
         # Chat should not be accessible via normal get
         assert chat_service.get_chat_by_id(created.id, user_id) is None
     
-    def test_delete_chat_not_found(self, chat_service: ChatService, user_id: UUID):
+    def test_delete_chat_not_found(self, chat_service: ChatService, user_id: str):
         """Test deleting non-existent chat returns False."""
         result = chat_service.delete_chat(uuid4(), user_id)
         
@@ -411,8 +411,8 @@ class TestDeleteChat:
     def test_delete_chat_wrong_user(
         self,
         chat_service: ChatService,
-        user_id: UUID,
-        another_user_id: UUID,
+        user_id: str,
+        another_user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test that user cannot delete another user's chat."""
@@ -429,7 +429,7 @@ class TestPermanentlyDeleteChat:
     def test_permanently_delete_chat_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test successful hard delete."""
@@ -444,7 +444,7 @@ class TestPermanentlyDeleteChat:
     def test_permanently_delete_chat_not_found(
         self,
         chat_service: ChatService,
-        user_id: UUID
+        user_id: str
     ):
         """Test permanently deleting non-existent chat returns False."""
         result = chat_service.permanently_delete_chat(uuid4(), user_id)
@@ -458,7 +458,7 @@ class TestRestoreChat:
     def test_restore_chat_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test successful chat restoration."""
@@ -474,7 +474,7 @@ class TestRestoreChat:
         assert result.is_deleted is False
         assert chat_service.get_chat_by_id(created.id, user_id) is not None
     
-    def test_restore_chat_not_found(self, chat_service: ChatService, user_id: UUID):
+    def test_restore_chat_not_found(self, chat_service: ChatService, user_id: str):
         """Test restoring non-existent chat returns None."""
         result = chat_service.restore_chat(uuid4(), user_id)
         
@@ -483,7 +483,7 @@ class TestRestoreChat:
     def test_restore_active_chat(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test restoring already active chat returns None."""
@@ -497,7 +497,7 @@ class TestRestoreChat:
 class TestCountUserChats:
     """Tests for count_user_chats method."""
     
-    def test_count_user_chats_empty(self, chat_service: ChatService, user_id: UUID):
+    def test_count_user_chats_empty(self, chat_service: ChatService, user_id: str):
         """Test counting when no chats exist."""
         result = chat_service.count_user_chats(user_id)
         
@@ -506,7 +506,7 @@ class TestCountUserChats:
     def test_count_user_chats_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -521,7 +521,7 @@ class TestCountUserChats:
     def test_count_user_chats_exclude_deleted(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -538,7 +538,7 @@ class TestCountUserChats:
     def test_count_user_chats_include_deleted(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -559,7 +559,7 @@ class TestCountActiveChats:
     def test_count_active_chats(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -580,7 +580,7 @@ class TestCountDeletedChats:
     def test_count_deleted_chats(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -602,7 +602,7 @@ class TestGetDeletedChats:
     def test_get_deleted_chats(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -625,7 +625,7 @@ class TestUpdateChatTitle:
     def test_update_chat_title_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test updating only the title."""
@@ -644,7 +644,7 @@ class TestUpdateChatSummary:
     def test_update_chat_summary_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test updating only the summary."""
@@ -663,7 +663,7 @@ class TestChatExists:
     def test_chat_exists_true(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test that existing chat returns True."""
@@ -673,7 +673,7 @@ class TestChatExists:
         
         assert result is True
     
-    def test_chat_exists_false(self, chat_service: ChatService, user_id: UUID):
+    def test_chat_exists_false(self, chat_service: ChatService, user_id: str):
         """Test that non-existent chat returns False."""
         result = chat_service.chat_exists(uuid4(), user_id)
         
@@ -682,8 +682,8 @@ class TestChatExists:
     def test_chat_exists_wrong_user(
         self,
         chat_service: ChatService,
-        user_id: UUID,
-        another_user_id: UUID,
+        user_id: str,
+        another_user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test that chat exists returns False for wrong user."""
@@ -700,7 +700,7 @@ class TestBulkDeleteChats:
     def test_bulk_delete_chats_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -717,7 +717,7 @@ class TestBulkDeleteChats:
     def test_bulk_delete_chats_partial_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate
     ):
         """Test bulk delete with some failures."""
@@ -737,7 +737,7 @@ class TestBulkRestoreChats:
     def test_bulk_restore_chats_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):
@@ -763,7 +763,7 @@ class TestBulkPermanentlyDeleteChats:
     def test_bulk_permanently_delete_chats_success(
         self,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         sample_chat_data: ChatCreate,
         another_chat_data: ChatCreate
     ):

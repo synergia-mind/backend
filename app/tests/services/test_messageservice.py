@@ -29,9 +29,9 @@ def model_service(session: Session):
 
 
 @pytest.fixture
-def user_id() -> UUID:
-    """Sample user ID."""
-    return uuid4()
+def user_id() -> str:
+    """Sample user ID (Clerk-style string ID)."""
+    return f"user_{uuid4().hex[:24]}"
 
 
 @pytest.fixture
@@ -59,7 +59,7 @@ def disabled_model(model_service: ModelService):
 
 
 @pytest.fixture
-def test_chat(chat_service: ChatService, user_id: UUID):
+def test_chat(chat_service: ChatService, user_id: str):
     """Create a test chat."""
     chat_data = ChatCreate(title="Test Chat")
     return chat_service.create_chat(user_id, chat_data)
@@ -174,7 +174,7 @@ class TestCreateMessageWithAutoChat:
     def test_create_message_with_auto_chat_success(
         self,
         message_service: MessageService,
-        user_id: UUID,
+        user_id: str,
         test_model
     ):
         """Test creating message with auto-created chat."""
@@ -197,7 +197,7 @@ class TestCreateMessageWithAutoChat:
         self,
         message_service: MessageService,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         test_model
     ):
         """Test creating message with custom chat title."""
@@ -216,7 +216,7 @@ class TestCreateMessageWithAutoChat:
         self,
         message_service: MessageService,
         chat_service: ChatService,
-        user_id: UUID,
+        user_id: str,
         test_model
     ):
         """Test that long content is truncated for chat title."""
@@ -235,7 +235,7 @@ class TestCreateMessageWithAutoChat:
     def test_create_message_with_auto_chat_disabled_model(
         self,
         message_service: MessageService,
-        user_id: UUID,
+        user_id: str,
         disabled_model
     ):
         """Test creating message with disabled model raises ValueError."""
