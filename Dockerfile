@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED=1 \
 # Set working directory
 WORKDIR /app
 
-# Install dependencies in a virtual environment
+# Create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -20,14 +20,16 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY pyproject.toml ./
 
 # Install dependencies
+# Note: Dependencies are listed explicitly since pyproject.toml lacks build-system config
 RUN pip install --upgrade pip && \
-    pip install alembic>=1.17.0 \
-                clerk-backend-api>=3.3.1 \
-                "fastapi[standard]>=0.119.1" \
-                "psycopg[binary]>=3.2.11" \
-                pydantic>=2.12.3 \
-                pydantic-settings>=2.11.0 \
-                sqlmodel>=0.0.27
+    pip install \
+        alembic>=1.17.0 \
+        clerk-backend-api>=3.3.1 \
+        "fastapi[standard]>=0.119.1" \
+        "psycopg[binary]>=3.2.11" \
+        pydantic>=2.12.3 \
+        pydantic-settings>=2.11.0 \
+        sqlmodel>=0.0.27
 
 # Final runtime stage
 FROM python:3.12-slim AS runtime
@@ -58,7 +60,7 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check - using standard health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/')" || exit 1
 
