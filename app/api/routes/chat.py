@@ -2,28 +2,22 @@ from uuid import UUID
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Query
-from pydantic import BaseModel
 
 from app.core.logging import get_logger
 from app.services.chat import ChatService
 from app.api.depends import SessionDep, CurrentUser
-from app.models import ChatCreate, ChatUpdate, ChatPublic, MessageResponse
+from app.models import (
+    ChatCreate, 
+    ChatUpdate, 
+    ChatPublic, 
+    MessageResponse,
+    ChatBulkOperationRequest,
+    BulkOperationResponse
+)
 
 
 router = APIRouter()
 logger = get_logger(__name__)
-
-
-class BulkOperationRequest(BaseModel):
-    """Request model for bulk operations on chats."""
-    chat_ids: list[UUID]
-
-
-class BulkOperationResponse(BaseModel):
-    """Response model for bulk operations."""
-    successful: int
-    failed: int
-    total: int
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ChatPublic)
@@ -173,7 +167,7 @@ async def count_user_chats(
 
 @router.post("/bulk/delete", response_model=BulkOperationResponse)
 async def bulk_delete_chats(
-    request: BulkOperationRequest,
+    request: ChatBulkOperationRequest,
     session: SessionDep,
     user: CurrentUser
 ):
@@ -201,7 +195,7 @@ async def bulk_delete_chats(
 
 @router.post("/bulk/restore", response_model=BulkOperationResponse)
 async def bulk_restore_chats(
-    request: BulkOperationRequest,
+    request: ChatBulkOperationRequest,
     session: SessionDep,
     user: CurrentUser
 ):
@@ -229,7 +223,7 @@ async def bulk_restore_chats(
 
 @router.post("/bulk/delete/permanent", response_model=BulkOperationResponse)
 async def bulk_permanently_delete_chats(
-    request: BulkOperationRequest,
+    request: ChatBulkOperationRequest,
     session: SessionDep,
     user: CurrentUser
 ):
