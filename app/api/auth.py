@@ -3,13 +3,15 @@ from fastapi.security import APIKeyHeader
 from clerk_backend_api import Clerk
 from clerk_backend_api.models import Session as ClerkSession
 from time import time
-from typing import Dict, Tuple
+from typing import Tuple
+from collections import OrderedDict
 from app.core import settings
 
 session_id_header = APIKeyHeader(name="X-Session-Id", auto_error=False)
 
 # Cache structure: {session_id: (session_object, expiry_timestamp)}
-_session_cache: Dict[str, Tuple[ClerkSession, float]] = {}
+# Using OrderedDict for proper LRU behavior with move_to_end()
+_session_cache: OrderedDict[str, Tuple[ClerkSession, float]] = OrderedDict()
 
 
 def get_clerk_client() -> Clerk:
@@ -26,6 +28,8 @@ def _get_cached_session(session_id: str) -> ClerkSession | None:
     """
     Retrieve a session from cache if valid and not expired.
     
+    Updates access order for proper LRU behavior.
+    
     Args:
         session_id: The session ID to look up.
         
@@ -35,6 +39,8 @@ def _get_cached_session(session_id: str) -> ClerkSession | None:
     if session_id in _session_cache:
         session, expiry = _session_cache[session_id]
         if time() < expiry:
+            # Move to end to mark as recently used (proper LRU behavior)
+            _session_cache.move_to_end(session_id)
             return session
         else:
             # Remove expired entry
@@ -47,6 +53,7 @@ def _cache_session(session_id: str, session: ClerkSession) -> None:
     Store a session in the cache with TTL.
     
     Implements LRU eviction when cache exceeds max size.
+    Removes least recently used item (first item in OrderedDict).
     
     Args:
         session_id: The session ID.
@@ -54,12 +61,14 @@ def _cache_session(session_id: str, session: ClerkSession) -> None:
     """
     # Implement LRU eviction if cache is full
     if len(_session_cache) >= settings.AUTH_CACHE_MAX_SIZE:
-        # Remove oldest entry (first item in dict, as Python 3.7+ maintains insertion order)
+        # Remove least recently used entry (first item in OrderedDict)
         oldest_key = next(iter(_session_cache))
         del _session_cache[oldest_key]
     
     expiry = time() + settings.AUTH_CACHE_TTL
     _session_cache[session_id] = (session, expiry)
+    # Move to end to mark as most recently used
+    _session_cache.move_to_end(session_id)
 
 
 def invalidate_session_cache(session_id: str) -> None:
