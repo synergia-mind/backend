@@ -75,6 +75,24 @@ class ChatService:
             return None
         return ChatPublic.model_validate(chat)
     
+    def get_chats_by_ids_and_user(self, chat_ids: list[UUID], user_id: str) -> list[ChatPublic]:
+        """
+        Get multiple chats by their IDs for a specific user.
+        
+        Args:
+            chat_ids: List of chat UUIDs
+            user_id: User ID string to verify ownership
+            
+        Returns:
+            List of ChatPublic instances (only for chats owned by the user)
+        """
+        chats = []
+        for chat_id in chat_ids:
+            chat = self.get_chat_by_id(chat_id, user_id)
+            if chat:
+                chats.append(chat)
+        return chats
+    
     def get_all_user_chats(
         self,
         user_id: str,
