@@ -160,3 +160,53 @@ class MessagePublic(MessageBase):
     updated_at: datetime
 
 # ==============================================
+# Bulk operation models
+class BulkOperationResponse(BaseModel):
+    """Response model for bulk operations."""
+    successful: int
+    failed: int
+    total: int
+
+
+class ChatBulkOperationRequest(BaseModel):
+    """Request model for bulk operations on chats."""
+    chat_ids: list[uuid.UUID]
+
+
+class MessageBulkOperationRequest(BaseModel):
+    """Request model for bulk operations on messages."""
+    message_ids: list[uuid.UUID]
+
+# ==============================================
+# Message-specific request/response models
+class MessageWithAutoChatRequest(BaseModel):
+    """Request model for creating a message with automatic chat creation."""
+    model_id: uuid.UUID
+    content: str
+    message_type: str = "user"
+    tokens: Optional[int] = None
+    chat_title: Optional[str] = None
+
+
+class MessageWithAutoChatResponse(BaseModel):
+    """Response model for creating a message with automatic chat creation."""
+    message: MessagePublic
+    chat_id: uuid.UUID
+
+
+class MessageFeedbackRequest(BaseModel):
+    """Request model for updating message feedback."""
+    feedback: str
+
+
+class ConversationSummaryResponse(BaseModel):
+    """Response model for conversation summary statistics."""
+    total_messages: int
+    user_messages: int
+    ai_messages: int
+    system_messages: int
+    total_tokens: int
+    total_cost: float
+    latest_message_at: Optional[datetime] = None
+
+# ==============================================
