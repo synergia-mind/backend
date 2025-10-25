@@ -162,6 +162,30 @@ class TestSessionCaching:
         assert "sess_3" in _session_cache
         assert "sess_4" in _session_cache
 
+    @patch("app.api.auth.settings")
+    def test_cache_lru_updates_access_order(self, mock_settings, mock_clerk_session):
+        """Test that accessing a cached item updates its position (proper LRU)."""
+        mock_settings.AUTH_CACHE_MAX_SIZE = 3
+        mock_settings.AUTH_CACHE_TTL = 300
+        
+        # Fill cache to max
+        _cache_session("sess_1", mock_clerk_session)
+        _cache_session("sess_2", mock_clerk_session)
+        _cache_session("sess_3", mock_clerk_session)
+        
+        # Access sess_1 to move it to the end (most recently used)
+        result = _get_cached_session("sess_1")
+        assert result == mock_clerk_session
+        
+        # Add a new session - should evict sess_2 (now the least recently used)
+        _cache_session("sess_4", mock_clerk_session)
+        
+        assert len(_session_cache) == 3
+        assert "sess_1" in _session_cache  # Should still be present (was accessed)
+        assert "sess_2" not in _session_cache  # Should be evicted (least recently used)
+        assert "sess_3" in _session_cache
+        assert "sess_4" in _session_cache
+
     def test_invalidate_session_cache_removes_session(self, mock_clerk_session):
         """Test that invalidation removes session from cache."""
         session_id = "sess_to_invalidate"
